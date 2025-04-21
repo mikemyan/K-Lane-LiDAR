@@ -12,6 +12,7 @@ from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 
 from baseline.models.registry import BACKBONE
+from performer_transformer import PerformerTransformer
 
 # helpers
 
@@ -160,9 +161,14 @@ class MultiScaleEncoder(nn.Module):
         super().__init__()
         self.layers = nn.ModuleList([])
         for _ in range(depth):
+            # self.layers.append(nn.ModuleList([
+            #     Transformer(dim = sm_dim, dropout = dropout, **sm_enc_params),
+            #     Transformer(dim = lg_dim, dropout = dropout, **lg_enc_params),
+            #     CrossTransformer(sm_dim = sm_dim, lg_dim = lg_dim, depth = cross_attn_depth, heads = cross_attn_heads, dim_head = cross_attn_dim_head, dropout = dropout)
+            # ]))
             self.layers.append(nn.ModuleList([
-                Transformer(dim = sm_dim, dropout = dropout, **sm_enc_params),
-                Transformer(dim = lg_dim, dropout = dropout, **lg_enc_params),
+                PerformerTransformer(dim = sm_dim, depth=sm_enc_params['depth'], heads=sm_enc_params['heads'], dim_head=sm_enc_params['dim_head'], mlp_dim=sm_enc_params['mlp_dim'], dropout=dropout),
+                PerformerTransformer(dim = lg_dim, depth=lg_enc_params['depth'], heads=lg_enc_params['heads'], dim_head=lg_enc_params['dim_head'], mlp_dim=lg_enc_params['mlp_dim'], dropout=dropout),
                 CrossTransformer(sm_dim = sm_dim, lg_dim = lg_dim, depth = cross_attn_depth, heads = cross_attn_heads, dim_head = cross_attn_dim_head, dropout = dropout)
             ]))
 
