@@ -50,7 +50,8 @@ backbone = dict(
 
 heads = dict(
     type='RowSharNotReducRef',
-    dim_feat=8, # input feat channels
+    # dim_feat=8, # input feat channels
+    dim_feat=32,
     row_size=144,
     dim_shared=512,
     lambda_cls=1.,
