@@ -11,7 +11,7 @@ from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 
 from baseline.models.registry import BACKBONE
-from performer_transformer import PerformerTransformer
+from .performer_transformer import PerformerTransformer
 
 # helpers
 def pair(t):
