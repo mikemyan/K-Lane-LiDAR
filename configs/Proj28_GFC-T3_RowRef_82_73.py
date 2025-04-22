@@ -92,7 +92,8 @@ scheduler = dict(
     T_max = total_iter
 )
 
-eval_ep = 1
+# eval_ep = 1
+eval_ep = 3
 save_ep = 1
 
 ### Setting Here ###
