@@ -74,30 +74,30 @@ class LightweightConv2dHead(nn.Module):
         }
 
     def get_lane_map_numpy_with_label(self, output, data=None, is_flip=True, is_img=False, is_get_1_stage_result=True):
-        """
-        Minimal post-processing for lane map visualization.
-        Args:
-            output: dict containing 'conf' ([B, 1, H, W]) and 'cls' ([B, num_cls, H, W])
-        Returns:
-            dict with keys:
-                'conf_label': (H, W) binary confidence mask
-                'cls_label': (H, W) predicted class index map
-                'conf_pred': (H, W) binary confidence mask
-                'cls_pred': (H, W) predicted class index map
-        """
         conf = output['conf']  # [B, 1, H, W] or [B, H, W]
         cls = output['cls']    # [B, num_cls, H, W]
         if conf.dim() == 4:
             conf = conf[:, 0]  # [B, H, W]
+        batch_size = conf.shape[0]
         conf_label = (conf > 0.5).cpu().numpy().astype('uint8')  # thresholded
-    
+        conf_pred_raw = conf.cpu().numpy()  # [B, H, W]
+        conf_pred = conf_label
+        cls_softmax = torch.softmax(cls, dim=1).cpu().numpy()
+        cls_pred_raw = cls_softmax
         cls_label = torch.argmax(cls, dim=1).cpu().numpy()  # [B, H, W]
-    
-        # For simplicity, return the first batch item
+        cls_idx = cls_label
+
+        conf_by_cls = conf_label
+        conf_cls_idx = cls_label
+        
         lane_maps = {
-            'conf_label': conf_label[0],
-            'cls_label': cls_label[0],
-            'conf_pred': conf_label[0],
-            'cls_pred': cls_label[0]
+            'conf_label': [conf_label[i] for i in range(batch_size)],
+            'cls_label': [cls_label[i] for i in range(batch_size)],
+            'conf_pred_raw': [conf_pred_raw[i] for i in range(batch_size)],
+            'cls_pred_raw': [cls_pred_raw[i] for i in range(batch_size)],
+            'conf_pred': [conf_pred[i] for i in range(batch_size)],
+            'conf_by_cls': [conf_by_cls[i] for i in range(batch_size)],
+            'cls_idx': [cls_idx[i] for i in range(batch_size)],
+            'conf_cls_idx': [conf_cls_idx[i] for i in range(batch_size)],
         }
         return lane_maps
