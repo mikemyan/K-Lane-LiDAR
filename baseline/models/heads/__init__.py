@@ -5,3 +5,4 @@
 '''
 from .grid_seg import GridSeg
 from .row_shared_not_reduc_ref import RowSharNotReducRef
+from .ml_new_head import LightweightConv2dHead

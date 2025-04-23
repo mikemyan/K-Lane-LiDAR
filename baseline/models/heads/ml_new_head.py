@@ -1,7 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from ..registry import HEADS
 
+@HEADS.register_module
 class LightweightConv2dHead(nn.Module):
     def __init__(self, in_channels=32, num_cls=6, **kwargs):
         super().__init__()
