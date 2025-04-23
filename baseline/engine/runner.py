@@ -165,6 +165,24 @@ class Runner(object):
 
                 lane_maps = output['lane_maps']
 
+                ## debugging
+                # Print for the first batch in the validation loop
+                conf_label = lane_maps['conf_label'][0]  # shape [H, W]
+                cls_label = lane_maps['cls_label'][0]    # shape [H, W]
+                gt_label = batch['label'][0].cpu().numpy()  # shape [H, W] (assuming batch['label'] is torch.Tensor)
+
+                print("conf_label unique values:", np.unique(conf_label))
+                print("cls_label unique values:", np.unique(cls_label))
+                print("ground truth label unique values:", np.unique(gt_label))
+                print("conf_label shape:", conf_label.shape)
+                print("cls_label shape:", cls_label.shape)
+                print("gt_label shape:", gt_label.shape)
+
+                print("conf_label patch:\n", conf_label[:5, :5])
+                print("cls_label patch:\n", cls_label[:5, :5])
+                print("gt_label patch:\n", gt_label[:5, :5])
+                ## debugging
+
                 for batch_idx in range(len(output['conf'])):
                     conf_label = lane_maps['conf_label'][batch_idx]
                     cls_label = lane_maps['cls_label'][batch_idx]
