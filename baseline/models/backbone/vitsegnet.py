@@ -11,7 +11,7 @@ from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 
 from baseline.models.registry import BACKBONE
-from .performer_transformer import PerformerTransformer
+from .new_performer_transformer import NewPerformerTransformer
 
 # helpers
 def pair(t):
@@ -104,8 +104,8 @@ class ViT(nn.Module):
         self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
         self.dropout = nn.Dropout(emb_dropout)
 
-        # self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
-        self.transformer = PerformerTransformer(dim, depth, heads, dim_head, mlp_dim, dropout)
+        self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
+        # self.transformer = NewPerformerTransformer(dim, depth, heads, dim_head, mlp_dim, dropout)
 
         self.pool = pool
         self.to_latent = nn.Identity()
@@ -173,7 +173,7 @@ class VitSegNet(nn.Module):
         mlp_dim = int(dim*expansion_factor)
 
         # self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
-        self.transformer = PerformerTransformer(dim, depth, heads, dim_head, mlp_dim, dropout)
+        self.transformer = NewPerformerTransformer(dim, depth, heads, dim_head, mlp_dim, dropout)
 
         temp_h = int(image_size/patch_size)
         self.rearrange = Rearrange('b (h w) (p1 p2 c) -> b c (h p1) (w p2)', h = temp_h, p1 = patch_size, p2 = patch_size)
