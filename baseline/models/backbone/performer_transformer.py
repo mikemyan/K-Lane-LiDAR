@@ -18,7 +18,7 @@ class FastAttention(nn.Module):
         # v: (batch, heads, seq, dim_heads)
         q_prime = self.kernel(q)
         k_prime = self.kernel(k)
-        D_inv = 1.0 / torch.einsum('bhnd,bhnd->bhn', q_prime, k_prime.sum(dim=2) + 1e-6)
+        D_inv = 1.0 / torch.einsum('bhnd,bhnd->bhn', q_prime, k_prime.sum(dim=2, keepdim=True).expand_as(q_prime) + 1e-6)
         context = torch.einsum('bhnd,bhnd->bhnd', k_prime, v)
         out = torch.einsum('bhnd,bhnd->bhnd', q_prime, context.sum(dim=2))
         out = out * D_inv.unsqueeze(-1)
