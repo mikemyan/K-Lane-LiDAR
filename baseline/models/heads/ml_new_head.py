@@ -80,6 +80,8 @@ class LightweightConv2dHead(nn.Module):
             output: dict containing 'conf' ([B, 1, H, W]) and 'cls' ([B, num_cls, H, W])
         Returns:
             dict with keys:
+                'conf_label': (H, W) binary confidence mask
+                'cls_label': (H, W) predicted class index map
                 'conf_pred': (H, W) binary confidence mask
                 'cls_pred': (H, W) predicted class index map
         """
@@ -94,6 +96,8 @@ class LightweightConv2dHead(nn.Module):
         # For simplicity, return the first batch item
         lane_maps = {
             'conf_label': conf_label[0],
-            'cls_label': cls_label[0]
+            'cls_label': cls_label[0],
+            'conf_pred': conf_label[0],
+            'cls_pred': cls_label[0]
         }
         return lane_maps
