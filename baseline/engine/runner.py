@@ -224,19 +224,24 @@ class Runner(object):
         self.net.train()
         self.batch_bar = tqdm(total = maximum_batch, desc='batch', position=1)
 
+        accumulation_steps = 4  # Set this to your desired value
+        
         for i, data in enumerate(train_loader):
             if i > maximum_batch:
                 break
-            
+        
             data = self.to_cuda(data)
             output = self.net(data)
-            self.optimizer.zero_grad()
-            loss = output['loss']
+            loss = output['loss'] / accumulation_steps  # Normalize loss
+        
             loss.backward()
-            self.optimizer.step()
-            self.scheduler.step()
-            if self.warmup_scheduler:
-                self.warmup_scheduler.dampen()
+        
+            if (i + 1) % accumulation_steps == 0 or (i + 1) == len(train_loader):
+                self.optimizer.step()
+                self.scheduler.step()
+                if self.warmup_scheduler:
+                    self.warmup_scheduler.dampen()
+                self.optimizer.zero_grad()
 
             ### Logging ###
             log_train = f'epoch={epoch}/{self.cfg.epochs}, loss={loss.detach().cpu()}'
@@ -245,6 +250,32 @@ class Runner(object):
             ### Logging ###
 
             self.batch_bar.update(1)
+
+    # def train_epoch_small(self, epoch, train_loader, maximum_batch = 200):
+    #     self.net.train()
+    #     self.batch_bar = tqdm(total = maximum_batch, desc='batch', position=1)
+
+    #     for i, data in enumerate(train_loader):
+    #         if i > maximum_batch:
+    #             break
+            
+    #         data = self.to_cuda(data)
+    #         output = self.net(data)
+    #         self.optimizer.zero_grad()
+    #         loss = output['loss']
+    #         loss.backward()
+    #         self.optimizer.step()
+    #         self.scheduler.step()
+    #         if self.warmup_scheduler:
+    #             self.warmup_scheduler.dampen()
+
+    #         ### Logging ###
+    #         log_train = f'epoch={epoch}/{self.cfg.epochs}, loss={loss.detach().cpu()}'
+    #         self.info_bar.set_description_str(log_train)
+    #         self.write_to_log(log_train + '\n', os.path.join(self.log_dir, 'train.txt'))
+    #         ### Logging ###
+
+    #         self.batch_bar.update(1)
 
     # def train_small(self, train_batch = 200, valid_samples = 80):
     #     train_loader = build_dataloader(self.cfg.dataset.train, self.cfg, is_train=True)

@@ -94,7 +94,7 @@ scheduler = dict(
 )
 
 # eval_ep = 1
-eval_ep = 3
+eval_ep = 2
 save_ep = 1
 
 ### Setting Here ###
