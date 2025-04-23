@@ -44,7 +44,7 @@ class LightweightConv2dHead(nn.Module):
         conf_loss = F.binary_cross_entropy_with_logits(conf_pred, conf_gt)
         # Mask out background pixels for class loss
         mask = (label != 255)
-        cls_loss = F.cross_entropy(cls_pred, cls_gt, reduction='none')  # [B, H, W]
+        cls_loss = F.cross_entropy(cls_pred, cls_gt.long(), reduction='none')  # [B, H, W]
         cls_loss = (cls_loss * mask.float()).sum() / mask.float().sum()
     
         return {
