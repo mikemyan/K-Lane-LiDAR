@@ -79,17 +79,31 @@ class LightweightConv2dHead(nn.Module):
         if conf.dim() == 4:
             conf = conf[:, 0]  # [B, H, W]
         batch_size = conf.shape[0]
-        conf_label = (conf > 0.5).cpu().numpy().astype('uint8')  # thresholded
-        conf_pred_raw = conf.cpu().numpy()  # [B, H, W]
-        conf_pred = conf_label
-        cls_softmax = torch.softmax(cls, dim=1).cpu().numpy()
-        cls_pred_raw = cls_softmax
-        cls_label = torch.argmax(cls, dim=1).cpu().numpy()  # [B, H, W]
-        cls_idx = cls_label
+        num_cls = cls.shape[1]
 
-        conf_by_cls = conf_label
-        conf_cls_idx = cls_label
-        
+        # Apply activations
+        conf_pred_raw = conf.cpu().numpy()  # [B, H, W]
+        conf_pred = (conf > 0.5).cpu().numpy().astype('uint8')  # [B, H, W]
+        cls_softmax = torch.softmax(cls, dim=1).cpu().numpy()   # [B, num_cls, H, W]
+        cls_pred_raw = cls_softmax  # [B, num_cls, H, W]
+        cls_idx = np.argmax(cls_softmax, axis=1)  # [B, H, W]
+
+        conf_label = conf_pred  # [B, H, W]
+        cls_label = cls_idx     # [B, H, W]
+
+        conf_by_cls = (cls_idx != (num_cls - 1)).astype('uint8')
+        conf_cls_idx = cls_idx.copy()
+
+        if is_flip:
+            conf_label = np.flip(np.flip(conf_label, axis=0),1)
+            conf_pred_raw = np.flip(np.flip(conf_pred_raw, axis=0),1)
+            conf_pred = np.flip(np.flip(conf_pred, axis=0),1)
+            cls_pred_raw = np.flip(np.flip(cls_pred_raw, axis=1),2)
+            cls_label = np.flip(np.flip(cls_label, axis=0),1)
+            cls_idx = np.flip(np.flip(cls_idx, axis=0),1)
+            conf_by_cls = np.flip(np.flip(conf_by_cls, axis=0),1)
+            conf_cls_idx = np.flip(np.flip(conf_cls_idx, axis=0),1)
+
         lane_maps = {
             'conf_label': [conf_label[i] for i in range(batch_size)],
             'cls_label': [cls_label[i] for i in range(batch_size)],
