@@ -38,7 +38,7 @@ class PerformerAttention(nn.Module):
         k_prime = self.kernel(k)
 
         # Compute normalization
-        D_inv = 1.0 / (torch.einsum('bhnd,bhmd->bhnm', q_prime, k_prime.sum(dim=2)) + 1e-6)
+        D_inv = 1.0 / (torch.einsum('bhnd,bhmd->bhnm', q_prime, k_prime.sum(dim=2).unsqueeze(2)) + 1e-6)
         context = torch.einsum('bhmd,bhmd->bhmd', k_prime, v)
         out = torch.einsum('bhnd,bhmd->bhnm', q_prime, context)
         out = out * D_inv.unsqueeze(-1)
