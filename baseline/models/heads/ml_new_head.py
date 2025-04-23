@@ -52,3 +52,48 @@ class LightweightConv2dHead(nn.Module):
             'cls_loss': cls_loss,
             'loss': conf_loss + cls_loss
         }
+
+    def get_conf_and_cls_dict(self, out, batch=None, **kwargs):
+        """
+        Post-process the output dictionary to match expected format.
+        Returns:
+            dict with keys 'conf' and 'cls', both as torch tensors.
+        """
+        # Apply sigmoid to confidence and softmax to class logits
+        conf = torch.sigmoid(out['conf'])  # [B, 1, H, W]
+        cls = torch.softmax(out['cls'], dim=1)  # [B, num_cls, H, W]
+    
+        # Optionally, get predicted class index map
+        cls_idx = torch.argmax(cls, dim=1)  # [B, H, W]
+    
+        # You can return whatever is expected by the rest of your pipeline
+        return {
+            'conf': conf,
+            'cls': cls,
+            'cls_idx': cls_idx
+        }
+
+    def get_lane_map_numpy_with_label(self, output, data=None, is_flip=True, is_img=False, is_get_1_stage_result=True):
+        """
+        Minimal post-processing for lane map visualization.
+        Args:
+            output: dict containing 'conf' ([B, 1, H, W]) and 'cls' ([B, num_cls, H, W])
+        Returns:
+            dict with keys:
+                'conf_pred': (H, W) binary confidence mask
+                'cls_pred': (H, W) predicted class index map
+        """
+        conf = output['conf']  # [B, 1, H, W] or [B, H, W]
+        cls = output['cls']    # [B, num_cls, H, W]
+        if conf.dim() == 4:
+            conf = conf[:, 0]  # [B, H, W]
+        conf_pred = (conf > 0.5).cpu().numpy().astype('uint8')  # thresholded
+    
+        cls_pred = torch.argmax(cls, dim=1).cpu().numpy()  # [B, H, W]
+    
+        # For simplicity, return the first batch item
+        lane_maps = {
+            'conf_pred': conf_pred[0],
+            'cls_pred': cls_pred[0]
+        }
+        return lane_maps
