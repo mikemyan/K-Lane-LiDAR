@@ -35,7 +35,6 @@ def main():
 
     # runner.train()
     runner.train_small(train_batch=2, valid_samples=40)
-    # runner.train_small(train_batch=30, valid_samples=40)
 
 if __name__ == '__main__':
     main()
