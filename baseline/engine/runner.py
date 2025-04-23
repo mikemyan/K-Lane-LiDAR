@@ -169,7 +169,7 @@ class Runner(object):
                 # Print for the first batch in the validation loop
                 conf_label = lane_maps['conf_label'][0]  # shape [H, W]
                 cls_label = lane_maps['cls_label'][0]    # shape [H, W]
-                gt_label = batch['label'][0].cpu().numpy()  # shape [H, W] (assuming batch['label'] is torch.Tensor)
+                gt_label = data['label'][0].cpu().numpy()  # shape [H, W] (assuming batch['label'] is torch.Tensor)
 
                 print("conf_label unique values:", np.unique(conf_label))
                 print("cls_label unique values:", np.unique(cls_label))
