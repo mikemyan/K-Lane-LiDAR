@@ -87,13 +87,13 @@ class LightweightConv2dHead(nn.Module):
         cls = output['cls']    # [B, num_cls, H, W]
         if conf.dim() == 4:
             conf = conf[:, 0]  # [B, H, W]
-        conf_pred = (conf > 0.5).cpu().numpy().astype('uint8')  # thresholded
+        conf_label = (conf > 0.5).cpu().numpy().astype('uint8')  # thresholded
     
-        cls_pred = torch.argmax(cls, dim=1).cpu().numpy()  # [B, H, W]
+        cls_label = torch.argmax(cls, dim=1).cpu().numpy()  # [B, H, W]
     
         # For simplicity, return the first batch item
         lane_maps = {
-            'conf_pred': conf_pred[0],
-            'cls_pred': cls_pred[0]
+            'conf_label': conf_label[0],
+            'cls_label': cls_label[0]
         }
         return lane_maps
