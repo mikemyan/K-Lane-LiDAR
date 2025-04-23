@@ -34,6 +34,9 @@ class Detector(nn.Module):
             output.update(self.heads.loss(out, batch, self.loss_type))
         else:
             out = self.heads(fea)
+            ## debugging
+            print("is_img flag is: ", self.cfg.view)
+            ## debugging
             if self.head_type == 'seg':
                 output.update({'conf': out[:,7,:,:], 'cls': out[:,:7,:,:]})
                 output.update({
