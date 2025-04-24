@@ -58,30 +58,30 @@ backbone = dict(
     is_with_shared_mlp=False,
 )
 
-# heads = dict(
-#     type='RowSharNotReducRef',
-#     # dim_feat=8, # input feat channels
-#     dim_feat=32,
-#     row_size=144,
-#     dim_shared=512,
-#     lambda_cls=1.,
-#     thr_ext = 0.3,
-#     off_grid = 2,
-#     dim_token = 1024,
-#     tr_depth = 1,
-#     tr_heads = 16,
-#     tr_dim_head = 64,
-#     tr_mlp_dim = 2048,
-#     tr_dropout = 0.,
-#     tr_emb_dropout = 0.,
-#     is_reuse_same_network = False,
-# )
-
 heads = dict(
-    type='LightweightConv2dHead',
-    in_channels=32,
-    num_cls=6
+    type='RowSharNotReducRef',
+    # dim_feat=8, # input feat channels
+    dim_feat=32,
+    row_size=144,
+    dim_shared=512,
+    lambda_cls=1.,
+    thr_ext = 0.3,
+    off_grid = 2,
+    dim_token = 1024,
+    tr_depth = 1,
+    tr_heads = 16,
+    tr_dim_head = 64,
+    tr_mlp_dim = 2048,
+    tr_dropout = 0.,
+    tr_emb_dropout = 0.,
+    is_reuse_same_network = False,
 )
+
+# heads = dict(
+#     type='LightweightConv2dHead',
+#     in_channels=32,
+#     num_cls=6
+# )
 
 conf_thr = 0.5
 view = True
@@ -98,7 +98,7 @@ cls_lane_color = [
 
 optimizer = dict(
   type = 'Adam', #'AdamW',
-  lr = 0.004,
+  lr = 0.0005,
 )
 
 epochs = 15
@@ -111,7 +111,7 @@ scheduler = dict(
 )
 
 # eval_ep = 1
-eval_ep = 5
+eval_ep = 2
 save_ep = 1
 
 ### Setting Here ###
