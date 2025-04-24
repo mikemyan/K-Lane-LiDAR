@@ -32,18 +32,18 @@ class PerformerAttention(nn.Module):
         b, n, _ = x.shape
         qkv = self.to_qkv(x).chunk(3, dim=-1)
         q, k, v = map(lambda t: t.view(b, n, self.heads, self.dim_head).transpose(1,2), qkv)
-
+    
         q = q * self.scale
         q_prime = self.kernel(q)
         k_prime = self.kernel(k)
-
-        k_sum = k_prime.sum(dim=2)  # [b, h, d]
+    
+        k_sum = k_prime.sum(dim=2)  # [b, h, f]
         D = (q_prime * k_sum.unsqueeze(2)).sum(dim=-1)  # [b, h, n]
         D_inv = 1.0 / (D + 1e-6)
-        context = torch.einsum('bhmd,bhmd->bhmd', k_prime, v)
-        out = torch.einsum('bhnd,bhmd->bhnm', q_prime, context)
+
+        context = torch.einsum('b h n f, b h n d -> b h f d', k_prime, v)  # [b, h, f, d]
+        out = torch.einsum('b h n f, b h f d -> b h n d', q_prime, context)  # [b, h, n, d]
         out = out * D_inv.unsqueeze(-1)
-        out = out.sum(dim=2)
         out = out.transpose(1,2).contiguous().view(b, n, self.heads * self.dim_head)
         out = self.to_out(out)
         return self.dropout(out)
