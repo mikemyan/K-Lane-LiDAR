@@ -1,8 +1,3 @@
-'''
-* Copyright (c) AVELab, KAIST. All rights reserved.
-* author: Donghee Paek & Kevin Tirta Wijaya, AVELab, KAIST
-* e-mail: donghee.paek@kaist.ac.kr, kevin.tirta@kaist.ac.kr
-'''
 import torch
 import torch.nn as nn
 import numpy as np
@@ -111,14 +106,14 @@ Lightweight row-wise transformer.
 """    
 @HEADS.register_module
 class LightRowTransformer(nn.Module):
-    def __init__(self, dim_feat=8, row_size=144, dim_token=256, num_cls=6, lambda_cls=1.0, cfg=None):
+    def __init__(self, dim_feat=8, row_size=144, dim_token=256, num_cls=6, lambda_cls = 1.0, cfg=None):
         super().__init__()
         self.cfg = cfg
         # self.row_tensor_maker = rearrange
         self.num_cls = num_cls
-
-        self.lambda_cls = lambda_cls
         
+        self.lambda_cls=lambda_cls
+
         self.token_window = 5  # 2*off_grid+1
         self.off_grid = 2
         in_token_channel = dim_feat * row_size * self.token_window

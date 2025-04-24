@@ -94,7 +94,7 @@ optimizer = dict(
 )
 
 epochs = 20
-batch_size = 8
+batch_size = 4
 total_iter = (2904 // batch_size) * epochs
 scheduler = dict(
     type = 'CosineAnnealingLR',
