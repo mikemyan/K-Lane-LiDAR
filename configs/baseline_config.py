@@ -1,9 +1,7 @@
 '''
-Rocky's transformer model. 
-
-Phase 1 - replace pcencoder resnet with densenet
-Phase 2 - replace backbone
-Phase 3 - replace head
+* Copyright (c) AVELab, KAIST. All rights reserved.
+* author: Donghee Paek & Kevin Tirta Wijaya, AVELab, KAIST
+* e-mail: donghee.paek@kaist.ac.kr, kevin.tirta@kaist.ac.kr
 '''
 seed = 2021
 load_from = None
@@ -18,12 +16,12 @@ net = dict(
 )
 
 pcencoder = dict(
-    type='DenseProjector',
-    densenet='densenet121',
-    pretrained=True, # prev False
-    replace_stride_with_dilation=[False, True, True],
+    type='Projector',
+    resnet='resnet34',
+    pretrained=False,
+    replace_stride_with_dilation=[False, True, False],
     out_conv=True,
-    in_channels=[64, 128, 256, 1024]
+    in_channels=[64, 128, 256, -1]
 )
 featuremap_out_channel = 64
 
@@ -35,8 +33,8 @@ list_img_size_xy = [1152, 1152]
 
 backbone = dict(
     type='VitSegNet', # GFC-T
-    image_size=144, # used to be 144, but densenet downsamples more aggressively 
-    patch_size=8,  # used to be 8
+    image_size=144,
+    patch_size=4,
     channels=64,
     dim=512,
     depth=3,
@@ -50,10 +48,21 @@ backbone = dict(
 )
 
 heads = dict(
-    type='LightRowTransformer',
-    dim_feat=8, # input feat channels
+    type='RowSharNotReducRef',
+    dim_feat=32, # input feat channels
     row_size=144,
-    dim_token=512
+    dim_shared=512,
+    lambda_cls=1.,
+    thr_ext = 0.3,
+    off_grid = 2,
+    dim_token = 1024,
+    tr_depth = 1,
+    tr_heads = 16,
+    tr_dim_head = 64,
+    tr_mlp_dim = 2048,
+    tr_dropout = 0.,
+    tr_emb_dropout = 0.,
+    is_reuse_same_network = False,
 )
 
 conf_thr = 0.5
@@ -71,11 +80,11 @@ cls_lane_color = [
 
 optimizer = dict(
   type = 'Adam', #'AdamW',
-  lr = 0.0002,
+  lr = 0.0003,
 )
 
-epochs = 100
-batch_size = 4
+epochs = 20
+batch_size = 8
 total_iter = (2904 // batch_size) * epochs
 scheduler = dict(
     type = 'CosineAnnealingLR',
@@ -83,7 +92,7 @@ scheduler = dict(
 )
 
 eval_ep = 5
-save_ep = 5
+save_ep = 1
 
 ### Setting Here ###
 dataset_path = './data/KLane' # '/media/donghee/HDD_0/KLane'
@@ -104,4 +113,4 @@ dataset = dict(
     )
 )
 
-workers=12
+workers=24
