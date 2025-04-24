@@ -3,8 +3,11 @@ from torch import nn
 import torch.nn.functional as F
 from einops import rearrange
 
+def gaussian_kernel(qk, scale=1.0):
+    return torch.exp(- (qk ** 2) / (2 * scale ** 2))
+
 class PerformerAttention(nn.Module):
-    def __init__(self, dim, heads=8, dim_head=64, dropout=0., kernel_fn=nn.ReLU()):
+    def __init__(self, dim, heads=8, dim_head=64, dropout=0., kernel_fn=gaussian_kernel):
         super().__init__()
         self.heads = heads
         self.dim_head = dim_head
