@@ -13,7 +13,7 @@ from einops.layers.torch import Rearrange
 from baseline.models.registry import BACKBONE
 # from .new_performer_transformer import NewPerformerTransformer
 from .ml_transformer import FeedForward
-from .ml_transformer import PerformerAttentionWithRelativePosition
+from .ml_transformer import PerformerAttention
 
 # helpers
 def pair(t):
@@ -76,7 +76,7 @@ class Transformer(nn.Module):
         self.layers = nn.ModuleList([])
         for _ in range(depth):
             self.layers.append(nn.ModuleList([
-                PreNorm(dim, PerformerAttentionWithRelativePosition(dim, heads = heads, dim_head = dim_head, dropout = dropout)),
+                PreNorm(dim, PerformerAttention(dim, heads = heads, dim_head = dim_head, dropout = dropout)),
                 PreNorm(dim, FeedForward(dim, mlp_dim, dropout = dropout))
             ]))
     def forward(self, x):
