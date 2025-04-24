@@ -1,10 +1,10 @@
 # Ignore data and logs folders
 /data
+/env
 temp_data_zips/
 
 # Ignore everything in logs
 logs/*
-
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -24,10 +24,16 @@ venv/
 
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
+dummy.py
 
 # System files
 .DS_Store
 Thumbs.db
+
+# IDE settings
+.vscode/
+.idea/
+
 
 # IDE settings
 .vscode/

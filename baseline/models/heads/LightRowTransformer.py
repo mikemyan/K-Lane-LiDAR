@@ -7,7 +7,6 @@ import torch
 import torch.nn as nn
 import numpy as np
 import cv2
-
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 from baseline.models.registry import HEADS
@@ -26,6 +25,7 @@ class PreNorm(nn.Module):
         super().__init__()
         self.norm = nn.LayerNorm(dim)
         self.fn = fn
+
     def forward(self, x, **kwargs):
         return self.fn(self.norm(x), **kwargs)
 
@@ -36,21 +36,19 @@ to allow nonlinear transformation and feature mixing within each token embedding
 
 dim: dimensionaliy of the input and output
 hidden_dim: intermediate dimensionality fr MLP expansion
-dropout: dropout rate applied after each linear transformation
 """
 class FeedForward(nn.Module):
-    def __init__(self, dim, hidden_dim, dropout = 0.):
+    def __init__(self, dim, hidden_dim):
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(dim, hidden_dim), # project input to higher dimension
             nn.GELU(),                  # nonlinear activation
-            nn.Dropout(dropout),        # optional dropout for regularization
             nn.Linear(hidden_dim, dim), # project back to original dimension
-            nn.Dropout(dropout)         # final dropout
         )
+
     def forward(self, x):
         return self.net(x)
-
+    
 """
 Defines the multi-head self attention mechanism. Applies scaled dot product with mutliple
 heads, allowing model to capture relationships between tokens.
@@ -58,40 +56,30 @@ heads, allowing model to capture relationships between tokens.
 dim: dimension of input features
 heads: number of attention heads
 dim_head: dimensionality per head
-dropout: dropout probability after output projection
 """
 class Attention(nn.Module):
-    def __init__(self, dim, heads = 8, dim_head = 64, dropout = 0.):
+    def __init__(self, dim, heads=2, dim_head=32):
         super().__init__()
-        inner_dim = dim_head *  heads # total dimension across all heads
-        project_out = not (heads == 1 and dim_head == dim)
-
+        inner_dim = dim_head * heads
         self.heads = heads
         self.scale = dim_head ** -0.5
 
-        self.attend = nn.Softmax(dim = -1)
-
-        # projects input into query, key, value
-        self.to_qkv = nn.Linear(dim, inner_dim * 3, bias = False)
-
-        # combines heads back to dim size, followed by dropout
-        self.to_out = nn.Sequential(
-            nn.Linear(inner_dim, dim),
-            nn.Dropout(dropout)
-        ) if project_out else nn.Identity()
+        self.to_qkv = nn.Linear(dim, inner_dim * 3, bias=False)
+        self.to_out = nn.Linear(inner_dim, dim)
 
     def forward(self, x):
-        qkv = self.to_qkv(x).chunk(3, dim = -1)
-        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h = self.heads), qkv)
+        q, k, v = self.to_qkv(x).chunk(3, dim=-1)
+        q = rearrange(q, 'b n (h d) -> b h n d', h=self.heads)
+        k = rearrange(k, 'b n (h d) -> b h n d', h=self.heads)
+        v = rearrange(v, 'b n (h d) -> b h n d', h=self.heads)
 
         dots = torch.matmul(q, k.transpose(-1, -2)) * self.scale
-
-        attn = self.attend(dots)
+        attn = dots.softmax(dim=-1)
 
         out = torch.matmul(attn, v)
         out = rearrange(out, 'b h n d -> b n (h d)')
         return self.to_out(out)
-
+    
 """
 Standard transformer encoder block implemented with prenorm architecture and 
 residual connections.
@@ -101,183 +89,120 @@ depth: number of repeated transformer layers
 heads: number of attention heads
 dim_head: dimensionality of each head
 mlp_dim: hidden dimension of the FFN
-dropout: dropout ate after attention and MLP blocks
 """
 class Transformer(nn.Module):
-    def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout = 0.):
+    def __init__(self, dim, depth, heads, dim_head, mlp_dim):
         super().__init__()
-        self.layers = nn.ModuleList([])
-        for _ in range(depth):
-            self.layers.append(nn.ModuleList([
-                PreNorm(dim, Attention(dim, heads = heads, dim_head = dim_head, dropout = dropout)),
-                PreNorm(dim, FeedForward(dim, mlp_dim, dropout = dropout))
-            ]))
+        self.layers = nn.ModuleList([
+            nn.ModuleList([
+                PreNorm(dim, Attention(dim, heads, dim_head)),
+                PreNorm(dim, FeedForward(dim, mlp_dim))
+            ]) for _ in range(depth)
+        ])
+
     def forward(self, x):
         for attn, ff in self.layers:
             x = attn(x) + x
             x = ff(x) + x
         return x
-
+    
+"""
+Lightweight row-wise transformer.
+"""    
 @HEADS.register_module
-class RowSharNotReducRef(nn.Module):
-    def __init__(self,
-                dim_feat=8, # input feat channels
-                row_size=144,
-                dim_shared=512,
-                lambda_cls=1.,
-                thr_ext = 0.3,
-                off_grid = 2,
-                dim_token = 1024,
-                tr_depth = 1,
-                tr_heads = 16,
-                tr_dim_head = 64,
-                tr_mlp_dim = 2048,
-                tr_dropout = 0.,
-                tr_emb_dropout = 0.,
-                is_reuse_same_network = False,
-                cfg=None):
-        super(RowSharNotReducRef, self).__init__()
-        self.cfg=cfg
+class LightRowTransformer(nn.Module):
+    def __init__(self, dim_feat=8, row_size=144, dim_token=256, num_cls=6, cfg=None):
+        super().__init__()
+        self.cfg = cfg
+        self.row_tensor_maker = rearrange
+        self.num_cls = num_cls
+        self.token_window = 5  # 2*off_grid+1
+        self.off_grid = 2
+        in_token_channel = dim_feat * row_size * self.token_window
 
-        ### Making Labels ###
-        self.num_cls = 6
-        self.lambda_cls=lambda_cls
-        ### Making Labels ###
+        # Shared 1D heads
+        self.shared_ext_head = nn.Sequential(
+            nn.Conv1d(dim_feat * row_size, 256, 1),
+            nn.BatchNorm1d(256),
+            nn.Conv1d(256, 2, 1),
+            rearrange('b c h -> b h c')
+        )
 
-        ### MLP Encoder (1st Stage) ###
-        self.row_tensor_maker = Rearrange('b c h w -> b (c w) h')
+        self.shared_cls_head = nn.Sequential(
+            nn.Conv1d(dim_feat * row_size, 256, 1),
+            nn.BatchNorm1d(256),
+            nn.Conv1d(256, row_size, 1),
+            rearrange('b w h -> b h w')
+        )
 
-        for idx_cls in range(self.num_cls):
-            setattr(self, f'ext_{idx_cls}', nn.Sequential(
-                nn.Conv1d(dim_feat*row_size, dim_shared,1,1,0),
-                nn.BatchNorm1d(dim_shared),
-                nn.Conv1d(dim_shared,2,1,1,0),
-                Rearrange('b c h -> b h c')
-            ))
-
-            setattr(self, f'cls_{idx_cls}', nn.Sequential(
-                nn.Conv1d(dim_feat*row_size, dim_shared,1,1,0),
-                nn.BatchNorm1d(dim_shared),
-                nn.Conv1d(dim_shared,row_size,1,1,0),
-                Rearrange('b w h -> b h w')
-            ))
-        ### MLP Encoder (1st Stage) ###
-
-        ### Refinement (2nd Stage) ###
-        self.thr_ext = thr_ext
-        self.off_grid = off_grid
-        in_token_channel = (2*self.off_grid+1)*row_size*dim_feat
         self.to_token = nn.Sequential(
-            Rearrange('c h w -> (c h w)'),
+            rearrange('c h w -> (c h w)'),
             nn.Linear(in_token_channel, dim_token)
         )
-        for idx_cls in range(self.num_cls):
-            setattr(self, f'emb_{idx_cls}', nn.Parameter(torch.randn(dim_token)).cuda())
-        self.emb_dropout = None
-        if tr_emb_dropout != 0.:
-            self.emb_dropout = nn.Dropout(tr_emb_dropout)
-        self.tr_lane_correlator = nn.Sequential(
-            Transformer(dim_token, tr_depth, tr_heads, tr_dim_head, tr_mlp_dim, tr_dropout),
+
+        self.embeddings = nn.Parameter(torch.randn(num_cls, dim_token))
+
+        self.transformer = nn.Sequential(
+            Transformer(dim_token, depth=1, heads=2, dim_head=32, mlp_dim=512),
             nn.LayerNorm(dim_token),
             nn.Linear(dim_token, in_token_channel),
-            Rearrange('b n (c h w) -> b n c h w', c=dim_feat, h=row_size)
+            rearrange('b n (c h w) -> b n c h w', c=dim_feat, h=row_size, w=self.token_window)
         )
 
-        if not is_reuse_same_network:
-            self.is_reuse_same_network = False
-            for idx_cls in range(self.num_cls):
-                setattr(self, f'ext2_{idx_cls}', nn.Sequential(
-                    nn.Conv1d(dim_feat*row_size, dim_shared,1,1,0),
-                    nn.BatchNorm1d(dim_shared),
-                    nn.Conv1d(dim_shared,2,1,1,0),
-                    Rearrange('b c h -> b h c')
-                ))
-
-                setattr(self, f'cls2_{idx_cls}', nn.Sequential(
-                    nn.Conv1d(dim_feat*row_size, dim_shared,1,1,0),
-                    nn.BatchNorm1d(dim_shared),
-                    nn.Conv1d(dim_shared,row_size,1,1,0),
-                    Rearrange('b w h -> b h w')
-                ))
-        else:
-            is_reuse_same_network = True
-
     def forward(self, x):
-        out_dict = dict()
-        b, _, _, _ = x.shape
-        self.b_size = b
+        B, C, H, W = x.shape
+        row_tensor = rearrange(x, 'b c h w -> b (c w) h')
 
-        row_feat = x # self.botn_layer(x)
-        row_tensor = self.row_tensor_maker(row_feat)
-        
-        for idx_cls in range(self.num_cls):
-            out_dict.update({f'ext_{idx_cls}': torch.nn.functional.softmax(getattr(self, f'ext_{idx_cls}')(row_tensor),dim=2)})
-            out_dict.update({f'cls_{idx_cls}': torch.nn.functional.softmax(getattr(self, f'cls_{idx_cls}')(row_tensor),dim=2)})
+        ext = torch.softmax(self.shared_ext_head(row_tensor), dim=2)  # (B, H, 2)
+        cls = torch.softmax(self.shared_cls_head(row_tensor), dim=2)  # (B, H, W)
 
-        ### 1st Stage Processing ###
-        # b, 144, 144 conf
-        # b, 7, 144, 144 cls
-        b_size, dim_feat, img_h, img_w = row_feat.shape # 2, 16, 144, 144
-        num_cls = self.num_cls
+        x_padded = torch.cat([
+            torch.zeros((B, C, H, self.off_grid), device=x.device),
+            x,
+            torch.zeros((B, C, H, self.off_grid), device=x.device)
+        ], dim=3)
 
-        # Zero padding for offset
-        off_grid = self.off_grid
-        zero_left = torch.zeros((b_size,dim_feat,img_h,off_grid)).cuda()
-        zero_right = torch.zeros((b_size,dim_feat,img_h,off_grid)).cuda()
-        row_feat_pad = torch.cat([zero_left, row_feat, zero_right], dim=3) # 2, 16, 144, 148 (144+2*off_grid)
-        # print(row_feat_pad.shape)
+        tokens = []
+        coords_list = []
+        for cls_idx in range(self.num_cls):
+            if torch.mean(ext[:, :, 0]) > 0.3:  # fake selection threshold
+                argmax_col = torch.argmax(cls, dim=2)  # (B, H)
+                token_batch = []
+                for b in range(B):
+                    patches = torch.zeros((C, H, self.token_window), device=x.device)
+                    for h in range(H):
+                        center = argmax_col[b, h] + self.off_grid
+                        patches[:, h, :] = x_padded[b, :, h, center - self.off_grid:center + self.off_grid + 1]
+                    token = self.to_token(patches) + self.embeddings[cls_idx]
+                    token_batch.append(token.unsqueeze(0))
+                tokens.append(torch.cat(token_batch, dim=0).unsqueeze(1))
+                coords_list.append(argmax_col)
 
-        for idx_b in range(b_size):
-            ext_lane_idx_per_b = []
-            ext_lane_tokens = []
-            ext_corr_idxs = []
-            for idx_c in range(num_cls):
-                # exist: one-hot to 0 (line), 1 (not)
-                lane_ext_prob = torch.mean(out_dict[f'ext_{idx_c}'][idx_b,:,0]) # prob that is lane
-                if lane_ext_prob > self.thr_ext: # if the line exts
-                    ext_lane_idx_per_b.append(idx_c)
-                    corr_idxs_b4 = out_dict[f'cls_{idx_c}'][idx_b,:,:] # when debug, make it small e.g., [idx_b,:8,:]
-                    corr_idxs = torch.argmax(corr_idxs_b4, dim=1) # 144, 1 (batch 1)
-                    ext_corr_idxs.append(corr_idxs)
-                    
-                    temp_token = torch.zeros((dim_feat,img_h,1+2*off_grid)).cuda()
-                    for idx_h in range(img_h):
-                        corr_idx = corr_idxs[idx_h]+off_grid # do not forget off_grid
-                        # print(row_feat_pad[idx_b,:,idx_h,corr_idx-off_grid:corr_idx+off_grid].shape)
-                        temp_token[:,idx_h,:] = row_feat_pad[idx_b,:,idx_h,corr_idx-off_grid:corr_idx+off_grid+1]
-                    # linear transform & pos
-                    # print(temp_token.shape)
-                    temp_token = self.to_token(temp_token) + getattr(self, f'emb_{idx_c}')
-                    ext_lane_tokens.append(torch.unsqueeze(torch.unsqueeze(temp_token, 0),0))
+        if tokens:
+            tokens = torch.cat(tokens, dim=1)
+            refined = self.transformer(tokens)
+            for i, coords in enumerate(coords_list):
+                for b in range(B):
+                    for h in range(H):
+                        center = coords[b, h] + self.off_grid
+                        x_padded[b, :, h, center - self.off_grid:center + self.off_grid + 1] = refined[b, i, :, h, :]
 
-            # print(ext_lane_idx_per_b)
-            # print(len(ext_lane_tokens))
-            if len(ext_lane_tokens) > 0:
-                tokens = self.tr_lane_correlator(torch.cat(ext_lane_tokens, dim=1))
-                # print(tokens.shape)
-                
-                # return to original row_feat_pad
-                for idx, corr_idxs in enumerate(ext_corr_idxs):
-                    for idx_h in range(idx_h):
-                        corr_idx = corr_idxs[idx_h]+off_grid
-                        row_feat_pad[idx_b,:,idx_h,corr_idx-off_grid:corr_idx+off_grid+1] = tokens[0,idx,:,idx_h,:]
-        row_feat = row_feat_pad[:,:,:,off_grid:img_w+off_grid]
-        # print(row_feat.shape)
-        row_tensor = self.row_tensor_maker(row_feat)
-        ### 1st Stage Processing ###
+        x = x_padded[:, :, :, self.off_grid:W + self.off_grid]
+        row_tensor = rearrange(x, 'b c h w -> b (c w) h')
 
-        ### 2nd Stage ###
-        for idx_cls in range(self.num_cls):
-            if self.is_reuse_same_network:
-                out_dict.update({f'ext2_{idx_cls}': torch.nn.functional.softmax(getattr(self, f'ext_{idx_cls}')(row_tensor),dim=2)})
-                out_dict.update({f'cls2_{idx_cls}': torch.nn.functional.softmax(getattr(self, f'cls_{idx_cls}')(row_tensor),dim=2)})
-            else:
-                out_dict.update({f'ext2_{idx_cls}': torch.nn.functional.softmax(getattr(self, f'ext2_{idx_cls}')(row_tensor),dim=2)})
-                out_dict.update({f'cls2_{idx_cls}': torch.nn.functional.softmax(getattr(self, f'cls2_{idx_cls}')(row_tensor),dim=2)})
-        ### 2nd Stage ###
+        ext2 = torch.softmax(self.shared_ext_head(row_tensor), dim=2)
+        cls2 = torch.softmax(self.shared_cls_head(row_tensor), dim=2)
 
-        return out_dict
+        return {
+            'ext': ext,
+            'cls': cls,
+            'ext2': ext2,
+            'cls2': cls2
+        }
+    
 
+    ### --- From other --- ###
+    
     def label_formatting(self, raw_label, is_get_label_as_tensor = False):
         # Output image: top-left of the image is farthest-left
         num_of_labels = len(raw_label)
