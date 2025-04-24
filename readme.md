@@ -1,12 +1,5 @@
-<p align="center">
-  <img src = "./docs/imgs/klane_logo_ver2.png" width="60%">
-</p>
-
-`K-Lane (KAIST-Lane)` (provided by [`AVELab`](http://ave.kaist.ac.kr/)) is the world's first open LiDAR lane detection frameworks that provides a dataset with wide range of driving scenarios in an urban environment. This repository provides the `K-Lane` frameworks, annotation tool for lane labelling, and the visualization tool for showing the inference results and calibrating the sensors.
-
-
-![image](./docs/imgs/klane_examples.png)
-
+# cs6140 Project - Lane Detection using K-Lane LiDAR dataset. 
+---
 
 # K-Lane Detection Frameworks
 This is the documentation for how to use our detection frameworks with K-Lane dataset.
@@ -17,16 +10,14 @@ We tested the K-Lane detection frameworks on the following environment:
 * CUDA 11.2
 
 ## Preparing the Dataset
-You can get a dataset in two different ways. One is about how to use our server, and the other is about how to use Google Drive.
+You can get a dataset using the Google Drive Urls below:
 
-* Via our server
+1. <a href="https://drive.google.com/drive/folders/1NE9DT8wZSbkL95Z9bQWm22EjGRb9SsYM?usp=sharing" title="K-Lane Dataset">link for download seq_01 to 04</a> 
+2. <a href="https://drive.google.com/drive/folders/1YBz5iaDLAcTH5IOjpaMrLt2iFu2m_Ui_?usp=sharing" title="K-Lane Dataset">link for download seq_05 to 12</a>
+3. <a href="https://drive.google.com/drive/folders/1dUIYuOhnKwM1Uf5Q-nC0X0piCZFL8zCQ?usp=sharing" title="K-Lane Dataset">link for download seq_13 to 14</a>
+4. <a href="https://drive.google.com/drive/folders/12aLITzR_tE8eVi-Q4OWoomX9VR3Olea7?usp=sharing" title="K-Lane Dataset">link for download seq_15, test, and description</a>
 
-1. To download the dataset, log in to <a href="https://kaistavelab.direct.quickconnect.to:54568/"> our server </a> with the following credentials: 
-      ID       : klaneds
-      Password : Klane2022
-2. Go to the "File Station" folder, and download the dataset by right-click --> download.
-   Note for Ubuntu user, there might be some error when unzipping the files. Please check the "readme_to_unzip_file_in_linux_system.txt".
-3. After all files are downloaded, please arrange the workspace directory with the following structure:
+After all files are downloaded, please arrange the workspace directory with the following structure:
 ```
 KLaneFrameworks
 ├── annot_tool
@@ -46,16 +37,7 @@ KLaneFrameworks
             ├── description_test_lightcurve.txt
 ├── logs
 ```
-![image](./docs/imgs/download_manual.png)
 
-* Via Google Drive Urls
-
-Also, you can get the dataset through the following Google Drive urls.
-
-1. <a href="https://drive.google.com/drive/folders/1NE9DT8wZSbkL95Z9bQWm22EjGRb9SsYM?usp=sharing" title="K-Lane Dataset">link for download seq_01 to 04</a> 
-2. <a href="https://drive.google.com/drive/folders/1YBz5iaDLAcTH5IOjpaMrLt2iFu2m_Ui_?usp=sharing" title="K-Lane Dataset">link for download seq_05 to 12</a>
-3. <a href="https://drive.google.com/drive/folders/1dUIYuOhnKwM1Uf5Q-nC0X0piCZFL8zCQ?usp=sharing" title="K-Lane Dataset">link for download seq_13 to 14</a>
-4. <a href="https://drive.google.com/drive/folders/12aLITzR_tE8eVi-Q4OWoomX9VR3Olea7?usp=sharing" title="K-Lane Dataset">link for download seq_15, test, and description</a>
 
 ## Requirements
 
@@ -64,42 +46,84 @@ Also, you can get the dataset through the following Google Drive urls.
 git clone ...
 ```
 
-2. Install the dependencies
-```
-pip install -r requirements.txt
-```
+2. Install the dependencies using requirements.txt
+   1. Install the commented-out packages manually
+      ```
+      pip3 install torch==1.7.1+cu110 -f https://download.pytorch.org/whl/torch_stable.html
+      ```
+   2. Install the rest of the package in batch
+      ```
+      pip3 install -r requirements.txt
+      ```
 
 ## Training & Testing
 * To train the model, prepare the total dataset and run
 ```
-python train_gpu_0.py ...
+python3 train_gpu_0.py ...
 ```
-* To test from a pretrained model (e.g., Proj28_GFC-T3_RowRef_82_73.pth), download the pretrained model from our Google Drive <a href="https://drive.google.com/drive/folders/14QHSxbCsUEf0FYZIa3j_uMFcLmMDwQmB?usp=sharing" title="K-Lane Dataset">Model</a> and run
+https://drive.google.com/drive/u/0/folders/1N3_2hsOI_295krR_cEMITu_RAbtyVbCJ
+* To test from a pretrained model (e.g., ml_curr_best.pth or ml_base.pth), download the pretrained model from our Google Drive <a href="https://drive.google.com/drive/u/0/folders/1N3_2hsOI_295krR_cEMITu_RAbtyVbCJ" title="pth">Model</a> and run
 ```
-python validate_gpu_0.py ...
+python3 validate_gpu_0.py ...
 ```
-* Testing can be done either with the python script or the GUI visualization tool. To test with the GUI visualization tool, please refer to the [Visualization Tool](./docs/visualization.md) visualization tool page </a>
-*  Youtube Movie for 'How to use the annotation tool': https://www.youtube.com/watch?v=RXa0_gWNvZU
 
-## Model Zoo
-|Name|Overall|Daylight|Night|Urban|Highway|Curve|Merging|Occ-0|Occ-2|Occ-4~6|GFLOPs|Model|Paper|
-|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-|LLDN-GFC|82.12|82.22|82.00|81.75|82.55|78.05|81.08|82.97|81.28|75.92|558.0|<a href="https://drive.google.com/drive/folders/14QHSxbCsUEf0FYZIa3j_uMFcLmMDwQmB?usp=sharing">Link</a>|<a href="https://openaccess.thecvf.com/content/CVPR2022W/WAD/papers/Paek_K-Lane_Lidar_Lane_Dataset_and_Benchmark_for_Urban_Roads_and_CVPRW_2022_paper.pdf">Link</a>|
-|RLLDN-LC|82.74|82.58|82.92|81.64|84.05|76.16|79.92|83.44|82.00|79.16|387.5|<a href="https://drive.google.com/drive/folders/14QHSxbCsUEf0FYZIa3j_uMFcLmMDwQmB?usp=sharing">Link</a>|<a href="https://arxiv.org/abs/2210.08745">Link</a>|
 
-## Development Kit 
-1. [Visualization Tool](./docs/visualization.md)
-      * [Requirements](./docs/visualization.md#Requirements)
-      * [Workspace Arrangement](./docs/visualization.md#Workspace-Arrangement)
-      * [Visualizing Inference](./docs/visualization.md#Visualizing-Inference)
-      * [Calibrating LiDAR to Camera](./docs/visualization.md#Calibrating-LiDAR-to-Camera)
-2. [Annotation Tool](./docs/annotation.md)
-      * [Requirements](./docs/annotation.md#Requirements)
-      * [Workspace Arrangement](./docs/annotation.md#Workspace-Arrangement)
-      * [Labelling a Point Cloud](./docs/annotation.md#Labelling-a-Point-Cloud)
+# Lane Detection with LiDAR Point Cloud
 
-## Updates
-* [2022-04-18] v1.0.0 is released along with the K-Lane Dataset. Please check [Getting Started](./docs/KLane.md#Workspace-Arrangement) for the download instruction.
+This project involves lane detection using the **KAIST-LANE (K-Lane) dataset** and builds upon the **LLDN-GFC** architecture. We have made several modifications to improve the model's performance, specifically by replacing parts of the architecture for better feature extraction and lane detection accuracy.
+
+## Modifications
+
+We made the following modifications to the original **LLDN-GFC** architecture:
+
+1. **Transformer Replacement**:
+   - Replaced the transformer used for the **BEV encoder** with a new version from `net/pcencoder/projector_dense.py`.
+   
+2. **Backbone Replacement**:
+   - Replaced the **Attention** and **FeedForward** modules of the transformer with our **Global Feature Correlator** backbone located in `baseline/models/backbone/ml_transformer.py`.
+
+These changes were designed to enhance the model's lane detection capabilities and improve overall performance.
+
+## Dataset
+
+We used the **KAIST-LANE (K-Lane)** dataset for training and testing the model. This dataset provides LiDAR point cloud data, which is essential for detecting lanes on road surfaces.
+
+## Running Instructions
+
+### Prerequisites
+
+Before running the model, make sure the following dependencies are installed:
+
+- Python 3.8 or higher
+- PyTorch
+- NumPy
+- OpenCV
+- Other dependencies listed in the `requirements.txt` file
+
+### Setup
+
+1. **Download Pre-trained Models**:
+
+   We have provided two pre-trained models:
+   - `ml_base.pth`: The training result of the baseline model (without our modifications).
+   - `ml_curr_best.pth`: The training result of our model (with the modifications mentioned above).
+
+   You can download these models from the following [Google Drive link](https://drive.google.com/drive/u/0/folders/1N3_2hsOI_295krR_cEMITu_RAbtyVbCJ).
+
+2. **Place the Model in the Config Folder**:
+   
+   Once you have downloaded the `.pth` files, select one of them:
+   - If you selected `ml_base.pth`, rename it to **`ml_curr_best.pth`**.
+   - Put the selected file inside the `configs/` folder of the project.
+
+### Running the Model
+
+To run the lane detection model, use the following command:
+
+```bash
+python main.py --config <path_to_config_file> --checkpoint <path_to_ml_curr_best.pth>
+
+
 
 ## License
 `K-Lane` is released under the Apache-2.0 license.
