@@ -9,7 +9,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = GPUS_EN
 import torch.backends.cudnn as cudnn
 import time
 import cv2
-import open3d as o3d
+# import open3d as o3d
 import pickle
 
 time_now = time.localtime()
@@ -23,8 +23,8 @@ import configs.config_vis as cnf
 
 def main():
     ### Set here ###
-    path_config = './configs/Proj28_GFC-T3_RowRef_82_73.py'
-    path_ckpt = './configs/Proj28_GFC-T3_RowRef_82_73.pth'
+    path_config = './configs/baseline_config.py'
+    path_ckpt = './configs/ml_curr_best_proj28.pth'
     ### Set here ###
 
     ### Settings ###
