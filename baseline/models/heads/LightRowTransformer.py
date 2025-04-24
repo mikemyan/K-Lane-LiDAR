@@ -125,18 +125,18 @@ class LightRowTransformer(nn.Module):
             nn.Conv1d(dim_feat * row_size, 256, 1),
             nn.BatchNorm1d(256),
             nn.Conv1d(256, 2, 1),
-            rearrange('b c h -> b h c')
+            Rearrange('b c h -> b h c')
         )
 
         self.shared_cls_head = nn.Sequential(
             nn.Conv1d(dim_feat * row_size, 256, 1),
             nn.BatchNorm1d(256),
             nn.Conv1d(256, row_size, 1),
-            rearrange('b w h -> b h w')
+            Rearrange('b w h -> b h w')
         )
 
         self.to_token = nn.Sequential(
-            rearrange('c h w -> (c h w)'),
+            Rearrange('c h w -> (c h w)'),
             nn.Linear(in_token_channel, dim_token)
         )
 
@@ -146,7 +146,7 @@ class LightRowTransformer(nn.Module):
             Transformer(dim_token, depth=1, heads=2, dim_head=32, mlp_dim=512),
             nn.LayerNorm(dim_token),
             nn.Linear(dim_token, in_token_channel),
-            rearrange('b n (c h w) -> b n c h w', c=dim_feat, h=row_size, w=self.token_window)
+            Rearrange('b n (c h w) -> b n c h w', c=dim_feat, h=row_size, w=self.token_window)
         )
 
     def forward(self, x):
