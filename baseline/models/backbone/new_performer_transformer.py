@@ -1,52 +1,92 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
+from torch.cuda.amp import autocast
+import math
 
 class PerformerAttention(nn.Module):
-    def __init__(self, dim, heads=8, dim_head=64, dropout=0., nb_features=256):
+    def __init__(self, dim, heads=8, dim_head=64, dropout=0.):
         super().__init__()
         self.heads = heads
         self.scale = dim_head ** -0.5
-        self.nb_features = nb_features
         self.dim_head = dim_head
+        
+        # Adaptive number of features based on sequence length
+        # Will be set in forward pass based on input size
+        self.nb_features = None
+        self.proj = None
 
         self.to_qkv = nn.Linear(dim, heads * dim_head * 3, bias=False)
         self.to_out = nn.Linear(heads * dim_head, dim)
         self.dropout = nn.Dropout(dropout)
 
-        # Random projection matrix for FAVOR+
-        self.create_projection_matrix()
+    def create_projection_matrix(self, n):
+        # Adaptive feature dimension based on sequence length
+        nb_features = min(256, int(math.log(n) * 32))
+        
+        # Only create new projection if dimensions change
+        if self.nb_features != nb_features:
+            self.nb_features = nb_features
+            matrix = torch.randn(self.nb_features, self.dim_head, device=self.to_qkv.weight.device)
+            q, _ = torch.qr(matrix)  # orthogonal matrix
+            self.proj = nn.Parameter(q.T, requires_grad=False)
 
-    def create_projection_matrix(self):
-        # Gaussian orthogonal random matrix
-        self.proj = nn.Parameter(
-            torch.randn(self.nb_features, self.dim_head), requires_grad=False
-        )
+    @torch.jit.script  # JIT compilation for faster execution
+    def kernel_fn(self, x, proj):
+        x_proj = torch.einsum('bhnd,fd->bhnf', x, proj)
+        return torch.exp(x_proj - torch.max(x_proj, dim=-1, keepdim=True)[0])
 
-    def kernel(self, x):
-        # FAVOR+ kernel approximation (exponential kernel)
-        x_proj = torch.einsum('bhnd,fd->bhnf', x, self.proj)
-        return torch.exp(x_proj)
+    def process_chunk(self, chunk):
+        b, n, _ = chunk.shape
+        
+        # Create or update projection matrix based on sequence length
+        self.create_projection_matrix(n)
+
+        # Split computation into smaller chunks for better memory efficiency
+        chunk_size = min(128, n)
+        total_chunks = (n + chunk_size - 1) // chunk_size
+        
+        outputs = []
+        
+        with autocast():  # Enable mixed precision
+            # QKV transformation
+            qkv = self.to_qkv(chunk).chunk(3, dim=-1)
+            q, k, v = map(lambda t: t.view(b, n, self.heads, self.dim_head).transpose(1, 2), qkv)
+            
+            q = q * self.scale
+            
+            # Process in chunks
+            for i in range(total_chunks):
+                start_idx = i * chunk_size
+                end_idx = min((i + 1) * chunk_size, n)
+                
+                q_chunk = q[:, :, start_idx:end_idx]
+                k_chunk = k[:, :, start_idx:end_idx]
+                v_chunk = v[:, :, start_idx:end_idx]
+                
+                # Compute kernel approximations
+                q_prime = self.kernel_fn(q_chunk, self.proj)
+                k_prime = self.kernel_fn(k_chunk, self.proj)
+                
+                # Compute attention efficiently
+                k_sum = k_prime.sum(dim=2, keepdim=True)  # [b, h, 1, f]
+                D = torch.einsum('bhnf,bhf->bhn', q_prime, k_sum.squeeze(2))  # [b, h, n]
+                D_inv = 1.0 / (D + 1e-4)  # Increased epsilon for stability
+                
+                # Compute context in chunks to save memory
+                context = torch.einsum('bhnf,bhnd->bhfd', k_prime, v_chunk)  # [b, h, f, d]
+                out_chunk = torch.einsum('bhnf,bhfd->bhnd', q_prime, context)  # [b, h, n, d]
+                out_chunk = out_chunk * D_inv.unsqueeze(-1)
+                
+                outputs.append(out_chunk)
+
+        # Combine chunks
+        out = torch.cat(outputs, dim=2)
+        out = out.transpose(1, 2).contiguous().view(b, n, self.heads * self.dim_head)
+        return self.dropout(self.to_out(out))
 
     def forward(self, x):
-        b, n, _ = x.shape
-        qkv = self.to_qkv(x).chunk(3, dim=-1)
-        q, k, v = map(lambda t: t.view(b, n, self.heads, self.dim_head).transpose(1,2), qkv)
-    
-        q = q * self.scale
-        q_prime = self.kernel(q)
-        k_prime = self.kernel(k)
-    
-        k_sum = k_prime.sum(dim=2)  # [b, h, f]
-        D = (q_prime * k_sum.unsqueeze(2)).sum(dim=-1)  # [b, h, n]
-        D_inv = 1.0 / (D + 1e-6)
-
-        context = torch.einsum('b h n f, b h n d -> b h f d', k_prime, v)  # [b, h, f, d]
-        out = torch.einsum('b h n f, b h f d -> b h n d', q_prime, context)  # [b, h, n, d]
-        out = out * D_inv.unsqueeze(-1)
-        out = out.transpose(1,2).contiguous().view(b, n, self.heads * self.dim_head)
-        out = self.to_out(out)
-        return self.dropout(out)
+        return self.process_chunk(x)  # Process entire input as one chunk if small enough
 
 class NewPerformerTransformer(nn.Module):
     def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout=0.):
@@ -66,6 +106,7 @@ class NewPerformerTransformer(nn.Module):
                 )
             ]))
 
+    @torch.jit.script  # This is the correct decorator for newer PyTorch
     def forward(self, x):
         for norm1, attn, norm2, ff in self.layers:
             x = attn(norm1(x)) + x
