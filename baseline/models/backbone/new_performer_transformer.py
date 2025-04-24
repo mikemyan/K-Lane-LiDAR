@@ -31,7 +31,6 @@ class PerformerAttention(nn.Module):
             q, _ = torch.qr(matrix)  # orthogonal matrix
             self.proj = nn.Parameter(q.T, requires_grad=False)
 
-    @torch.jit.script  # JIT compilation for faster execution
     def kernel_fn(self, x, proj):
         x_proj = torch.einsum('bhnd,fd->bhnf', x, proj)
         return torch.exp(x_proj - torch.max(x_proj, dim=-1, keepdim=True)[0])
@@ -106,7 +105,6 @@ class NewPerformerTransformer(nn.Module):
                 )
             ]))
 
-    @torch.jit.script  # This is the correct decorator for newer PyTorch
     def forward(self, x):
         for norm1, attn, norm2, ff in self.layers:
             x = attn(norm1(x)) + x
