@@ -101,7 +101,7 @@ optimizer = dict(
   lr = 0.0003,
 )
 
-epochs = 20
+epochs = 30
 # batch_size = 4
 batch_size = 8
 total_iter = (2904 // batch_size) * epochs
@@ -111,7 +111,7 @@ scheduler = dict(
 )
 
 # eval_ep = 1
-eval_ep = 3
+eval_ep = 5
 save_ep = 1
 
 ### Setting Here ###
