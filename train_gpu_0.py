@@ -18,7 +18,9 @@ from baseline.utils.config import Config
 from baseline.engine.runner import Runner
 
 def main():
-    path_config = './configs/baseline_config.py'
+    torch.cuda.empty_cache()
+    path_config = './configs/Proj28_GFC-T3_RowRef_82_73.py' # ml_proj config
+    # path_config = './configs/baseline_config.py' # baseline config
     path_split = path_config.split('/')
     cfg = Config.fromfile(path_config)
     cfg.log_dir = cfg.log_dir + '/' + time_log
@@ -34,7 +36,12 @@ def main():
     runner = Runner(cfg)
 
     # runner.train()
-    runner.train_small(train_batch=40, valid_samples=25)
+
+    # runner.train_small(train_batch=2, valid_samples=40)
+    # runner.train_small(train_batch=30, valid_samples=40)
+
+    runner.train_small(train_batch=80, valid_samples=25)
+
 
 if __name__ == '__main__':
     main()

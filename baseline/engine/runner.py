@@ -218,6 +218,7 @@ class Runner(object):
         self.write_to_log(log_val + '\n', os.path.join(self.log_dir, 'val.txt'))
         self.val_info_bar.set_description_str(log_val)
         ### Logging ###
+        return conf_f1
     
     def save_ckpt(self, epoch, is_best=False):
         save_model(self.net, self.optimizer, self.scheduler, epoch, self.cfg.log_dir, is_best=is_best)
@@ -227,19 +228,24 @@ class Runner(object):
         self.net.train()
         self.batch_bar = tqdm(total = maximum_batch, desc='batch', position=1)
 
+        accumulation_steps = 4  # Set this to your desired value
+        
         for i, data in enumerate(train_loader):
             if i > maximum_batch:
                 break
-            
+        
             data = self.to_cuda(data)
             output = self.net(data)
-            self.optimizer.zero_grad()
-            loss = output['loss']
+            loss = output['loss'] / accumulation_steps  # Normalize loss
+        
             loss.backward()
-            self.optimizer.step()
-            self.scheduler.step()
-            if self.warmup_scheduler:
-                self.warmup_scheduler.dampen()
+        
+            if (i + 1) % accumulation_steps == 0 or (i + 1) == len(train_loader):
+                self.optimizer.step()
+                self.scheduler.step()
+                if self.warmup_scheduler:
+                    self.warmup_scheduler.dampen()
+                self.optimizer.zero_grad()
 
             ### Logging ###
             log_train = f'epoch={epoch}/{self.cfg.epochs}, loss={loss.detach().cpu()}'
@@ -249,15 +255,63 @@ class Runner(object):
 
             self.batch_bar.update(1)
 
-    def train_small(self, train_batch = 200, valid_samples = 80):
+    # def train_epoch_small(self, epoch, train_loader, maximum_batch = 200):
+    #     self.net.train()
+    #     self.batch_bar = tqdm(total = maximum_batch, desc='batch', position=1)
+
+    #     for i, data in enumerate(train_loader):
+    #         if i > maximum_batch:
+    #             break
+            
+    #         data = self.to_cuda(data)
+    #         output = self.net(data)
+    #         self.optimizer.zero_grad()
+    #         loss = output['loss']
+    #         loss.backward()
+    #         self.optimizer.step()
+    #         self.scheduler.step()
+    #         if self.warmup_scheduler:
+    #             self.warmup_scheduler.dampen()
+
+    #         ### Logging ###
+    #         log_train = f'epoch={epoch}/{self.cfg.epochs}, loss={loss.detach().cpu()}'
+    #         self.info_bar.set_description_str(log_train)
+    #         self.write_to_log(log_train + '\n', os.path.join(self.log_dir, 'train.txt'))
+    #         ### Logging ###
+
+    #         self.batch_bar.update(1)
+
+    # def train_small(self, train_batch = 200, valid_samples = 80):
+    #     train_loader = build_dataloader(self.cfg.dataset.train, self.cfg, is_train=True)
+
+    #     for epoch in range(self.cfg.epochs):
+    #         self.train_epoch_small(epoch, train_loader, train_batch)
+    #         if (epoch + 1) % self.cfg.save_ep == 0 or epoch == self.cfg.epochs - 1:
+    #             self.save_ckpt(epoch)
+    #         if (epoch + 1) % self.cfg.eval_ep == 0 or epoch == self.cfg.epochs - 1:
+    #             self.validate(epoch, is_small=True, valid_samples=valid_samples)
+
+    def train_small(self, train_batch=200, valid_samples=80, early_stopping_patience=5):
         train_loader = build_dataloader(self.cfg.dataset.train, self.cfg, is_train=True)
+        best_val_metric = None
+        epochs_since_improvement = 0
 
         for epoch in range(self.cfg.epochs):
             self.train_epoch_small(epoch, train_loader, train_batch)
             if (epoch + 1) % self.cfg.save_ep == 0 or epoch == self.cfg.epochs - 1:
                 self.save_ckpt(epoch)
             if (epoch + 1) % self.cfg.eval_ep == 0 or epoch == self.cfg.epochs - 1:
-                self.validate(epoch, is_small=True, valid_samples=valid_samples)
+                val_metric = self.validate(epoch, is_small=True, valid_samples=valid_samples)
+                # compare f1 confidence returned from validate()
+                if best_val_metric is None or val_metric > best_val_metric:
+                    best_val_metric = val_metric
+                    epochs_since_improvement = 0
+                else:
+                    epochs_since_improvement += 1
+
+                if epochs_since_improvement >= early_stopping_patience:
+                    print(f"Early stopping at epoch {epoch+1}")
+                    break
     
     def load_ckpt(self, path_ckpt):
         trained_model = torch.load(path_ckpt)
