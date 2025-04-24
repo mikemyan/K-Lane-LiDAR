@@ -9,11 +9,11 @@ import pickle
 import numpy as np
 import cv2
 import torch
-import open3d as o3d
+#import open3d as o3d
 
 from baseline.datasets.avelane_vis import AVELaneVis
-from PyQt5.QtWidgets import QDesktopWidget, QListWidgetItem
-from PyQt5.QtGui import QImage, QPixmap
+#from PyQt5.QtWidgets import QDesktopWidget, QListWidgetItem
+#from PyQt5.QtGui import QImage, QPixmap
 
 from baseline.utils.config import Config
 from baseline.engine.runner import Runner
