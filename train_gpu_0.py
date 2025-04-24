@@ -18,8 +18,8 @@ from baseline.utils.config import Config
 from baseline.engine.runner import Runner
 
 def main():
-    # path_config = './configs/rocky_model.py'
-    path_config = './configs/Proj28_GFC-T3_RowRef_82_73.py'
+    path_config = './configs/rocky_model.py'
+    # path_config = './configs/Proj28_GFC-T3_RowRef_82_73.py'
     path_split = path_config.split('/')
     cfg = Config.fromfile(path_config)
     cfg.log_dir = cfg.log_dir + '/' + time_log
@@ -39,7 +39,7 @@ def main():
     # runner.train_small(train_batch=2, valid_samples=40)
     # runner.train_small(train_batch=30, valid_samples=40)
 
-    runner.train_small(train_batch=5, valid_samples=5)
+    runner.train_small(train_batch=40, valid_samples=25)
 
 
 if __name__ == '__main__':

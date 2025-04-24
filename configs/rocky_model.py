@@ -36,7 +36,7 @@ list_img_size_xy = [1152, 1152]
 backbone = dict(
     type='VitSegNet', # GFC-T
     image_size=144, # used to be 144, but densenet downsamples more aggressively 
-    patch_size=8,  # used to be 8
+    patch_size=4,  # used to be 8
     channels=64,
     dim=512,
     depth=3,
@@ -69,7 +69,7 @@ backbone = dict(
 
 heads = dict(
     type='LightRowTransformer',
-    dim_feat=8, # input feat channels
+    dim_feat=32, # input feat channels
     row_size=144,
     dim_token = 1024,
 )

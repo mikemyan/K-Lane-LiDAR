@@ -302,11 +302,10 @@ class Runner(object):
                 self.save_ckpt(epoch)
             if (epoch + 1) % self.cfg.eval_ep == 0 or epoch == self.cfg.epochs - 1:
                 val_metric = self.validate(epoch, is_small=True, valid_samples=valid_samples)
-                # Suppose validate() returns the metric you care about (e.g., f1 score)
+                # compare f1 confidence returned from validate()
                 if best_val_metric is None or val_metric > best_val_metric:
                     best_val_metric = val_metric
                     epochs_since_improvement = 0
-                    # Optionally save best model here
                 else:
                     epochs_since_improvement += 1
 
