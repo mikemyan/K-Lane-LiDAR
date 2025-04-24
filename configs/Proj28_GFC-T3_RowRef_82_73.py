@@ -98,12 +98,12 @@ cls_lane_color = [
 
 optimizer = dict(
   type = 'Adam', #'AdamW',
-  lr = 0.0005,
+  lr = 0.0002,
 )
 
-epochs = 15
+epochs = 20
 # batch_size = 4
-batch_size = 8
+batch_size = 10
 total_iter = (2904 // batch_size) * epochs
 scheduler = dict(
     type = 'CosineAnnealingLR',
