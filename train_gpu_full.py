@@ -6,7 +6,8 @@ from baseline.engine.runner import Runner
 import torch.backends.cudnn as cudnn
 
 def main():
-    path_config = './configs/rocky_model.py'
+    # path_config = './configs/rocky_model.py'
+    path_config = './configs/Proj28_GFC-T3_RowRef_82_73.py'
     path_split = path_config.split('/')
     time_now = time.localtime()
     time_log = '%04d-%02d-%02d-%02d-%02d-%02d' % (time_now.tm_year, time_now.tm_mon, time_now.tm_mday, time_now.tm_hour, time_now.tm_min, time_now.tm_sec)
