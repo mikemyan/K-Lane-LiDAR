@@ -1,7 +1,9 @@
 '''
-* Copyright (c) AVELab, KAIST. All rights reserved.
-* author: Donghee Paek & Kevin Tirta Wijaya, AVELab, KAIST
-* e-mail: donghee.paek@kaist.ac.kr, kevin.tirta@kaist.ac.kr
+Rocky's transformer model. 
+
+Phase 1 - replace pcencoder resnet with densenet
+Phase 2 - replace backbone
+Phase 3 - replace head
 '''
 seed = 2021
 load_from = None
@@ -16,12 +18,12 @@ net = dict(
 )
 
 pcencoder = dict(
-    type='Projector',
-    resnet='resnet34',
-    pretrained=False,
-    replace_stride_with_dilation=[False, True, False],
+    type='DenseProjector',
+    densenet='densenet121',
+    pretrained=True, # prev False
+    replace_stride_with_dilation=[False, True, True],
     out_conv=True,
-    in_channels=[64, 128, 256, -1]
+    in_channels=[64, 128, 256, 1024]
 )
 featuremap_out_channel = 64
 
@@ -33,8 +35,8 @@ list_img_size_xy = [1152, 1152]
 
 backbone = dict(
     type='VitSegNet', # GFC-T
-    image_size=144,
-    patch_size=8,
+    image_size=144, # used to be 144, but densenet downsamples more aggressively 
+    patch_size=8,  # used to be 8
     channels=64,
     dim=512,
     depth=3,
@@ -83,15 +85,15 @@ optimizer = dict(
   lr = 0.0001,
 )
 
-epochs = 15
-batch_size = 4
+epochs = 20
+batch_size = 8
 total_iter = (2904 // batch_size) * epochs
 scheduler = dict(
     type = 'CosineAnnealingLR',
     T_max = total_iter
 )
 
-eval_ep = 1
+eval_ep = 5
 save_ep = 1
 
 ### Setting Here ###
@@ -112,4 +114,5 @@ dataset = dict(
         mode_item='pc',
     )
 )
+
 workers=12
