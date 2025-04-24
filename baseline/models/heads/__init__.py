@@ -5,3 +5,4 @@
 '''
 from .grid_seg import GridSeg
 from .row_shared_not_reduc_ref import RowSharNotReducRef
+from .light_row_transformer import LightRowTransformer

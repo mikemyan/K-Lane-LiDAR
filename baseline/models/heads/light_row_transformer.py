@@ -1,8 +1,3 @@
-'''
-* Copyright (c) AVELab, KAIST. All rights reserved.
-* author: Donghee Paek & Kevin Tirta Wijaya, AVELab, KAIST
-* e-mail: donghee.paek@kaist.ac.kr, kevin.tirta@kaist.ac.kr
-'''
 import torch
 import torch.nn as nn
 import numpy as np
@@ -111,11 +106,14 @@ Lightweight row-wise transformer.
 """    
 @HEADS.register_module
 class LightRowTransformer(nn.Module):
-    def __init__(self, dim_feat=8, row_size=144, dim_token=256, num_cls=6, cfg=None):
+    def __init__(self, dim_feat=8, row_size=144, dim_token=256, num_cls=6, lambda_cls = 1.0, cfg=None):
         super().__init__()
         self.cfg = cfg
-        self.row_tensor_maker = rearrange
+        # self.row_tensor_maker = rearrange
         self.num_cls = num_cls
+        
+        self.lambda_cls=lambda_cls
+
         self.token_window = 5  # 2*off_grid+1
         self.off_grid = 2
         in_token_channel = dim_feat * row_size * self.token_window
@@ -125,18 +123,18 @@ class LightRowTransformer(nn.Module):
             nn.Conv1d(dim_feat * row_size, 256, 1),
             nn.BatchNorm1d(256),
             nn.Conv1d(256, 2, 1),
-            rearrange('b c h -> b h c')
+            Rearrange('b c h -> b h c')
         )
 
         self.shared_cls_head = nn.Sequential(
             nn.Conv1d(dim_feat * row_size, 256, 1),
             nn.BatchNorm1d(256),
             nn.Conv1d(256, row_size, 1),
-            rearrange('b w h -> b h w')
+            Rearrange('b w h -> b h w')
         )
 
         self.to_token = nn.Sequential(
-            rearrange('c h w -> (c h w)'),
+            Rearrange('c h w -> (c h w)'),
             nn.Linear(in_token_channel, dim_token)
         )
 
@@ -146,7 +144,7 @@ class LightRowTransformer(nn.Module):
             Transformer(dim_token, depth=1, heads=2, dim_head=32, mlp_dim=512),
             nn.LayerNorm(dim_token),
             nn.Linear(dim_token, in_token_channel),
-            rearrange('b n (c h w) -> b n c h w', c=dim_feat, h=row_size, w=self.token_window)
+            Rearrange('b n (c h w) -> b n c h w', c=dim_feat, h=row_size, w=self.token_window)
         )
 
     def forward(self, x):
@@ -193,12 +191,14 @@ class LightRowTransformer(nn.Module):
         ext2 = torch.softmax(self.shared_ext_head(row_tensor), dim=2)
         cls2 = torch.softmax(self.shared_cls_head(row_tensor), dim=2)
 
-        return {
-            'ext': ext,
-            'cls': cls,
-            'ext2': ext2,
-            'cls2': cls2
-        }
+        out_dict = {}
+        for idx in range(self.num_cls):
+            out_dict[f'ext_{idx}'] = ext
+            out_dict[f'cls_{idx}'] = cls
+            out_dict[f'ext2_{idx}'] = ext2
+            out_dict[f'cls2_{idx}'] = cls2
+
+        return out_dict
     
 
     ### --- From other --- ###
