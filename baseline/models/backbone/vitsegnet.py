@@ -172,8 +172,8 @@ class VitSegNet(nn.Module):
 
         mlp_dim = int(dim*expansion_factor)
 
-        # self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
-        self.transformer = NewPerformerTransformer(dim, depth, heads, dim_head, mlp_dim, dropout)
+        self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
+        # self.transformer = NewPerformerTransformer(dim, depth, heads, dim_head, mlp_dim, dropout)
 
         temp_h = int(image_size/patch_size)
         self.rearrange = Rearrange('b (h w) (p1 p2 c) -> b c (h p1) (w p2)', h = temp_h, p1 = patch_size, p2 = patch_size)

@@ -15,14 +15,24 @@ net = dict(
     loss_type='row_ce'
 )
 
+# pcencoder = dict(
+#     type='Projector',
+#     resnet='resnet34',
+#     pretrained=False,
+#     replace_stride_with_dilation=[False, True, False],
+#     out_conv=True,
+#     in_channels=[64, 128, 256, -1]
+# )
+
 pcencoder = dict(
-    type='Projector',
-    resnet='resnet34',
-    pretrained=False,
-    replace_stride_with_dilation=[False, True, False],
+    type='DenseProjector',
+    densenet='densenet121',
+    pretrained=True, # prev False
+    replace_stride_with_dilation=[False, True, True],
     out_conv=True,
-    in_channels=[64, 128, 256, -1]
+    in_channels=[64, 128, 256, 1024]
 )
+
 featuremap_out_channel = 64
 
 filter_mode = 'xyz'
@@ -93,7 +103,7 @@ optimizer = dict(
 
 epochs = 15
 # batch_size = 4
-batch_size = 20
+batch_size = 8
 total_iter = (2904 // batch_size) * epochs
 scheduler = dict(
     type = 'CosineAnnealingLR',
@@ -101,7 +111,7 @@ scheduler = dict(
 )
 
 # eval_ep = 1
-eval_ep = 2
+eval_ep = 5
 save_ep = 1
 
 ### Setting Here ###
