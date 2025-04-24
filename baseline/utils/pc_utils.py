@@ -3,7 +3,7 @@
 * author: Donghee Paek & Kevin Tirta Wijaya, AVELab, KAIST
 * e-mail: donghee.paek@kaist.ac.kr, kevin.tirta@kaist.ac.kr
 '''
-import open3d as o3d
+# import open3d as o3d
 import numpy as np
 
 __all__ = ['get_pc_os64_with_path', 'filter_pc_os64_with_roi', \
