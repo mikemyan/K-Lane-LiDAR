@@ -2,6 +2,7 @@
 /data
 /env
 temp_data_zips/
+/configs/ml_curr_best.pth
 
 # Ignore everything in logs
 logs/*

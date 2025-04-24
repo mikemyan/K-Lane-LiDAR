@@ -1,9 +1,17 @@
 import os
+GPUS_EN = '0'
+os.environ["CUDA_VISIBLE_DEVICES"] = GPUS_EN
+import torch
+from baseline.utils.config import Config
+import torch.backends.cudnn as cudnn
 import time
 import shutil
+
+time_now = time.localtime()
+time_log = '%04d-%02d-%02d-%02d-%02d-%02d' % (time_now.tm_year, time_now.tm_mon, time_now.tm_mday, time_now.tm_hour, time_now.tm_min, time_now.tm_sec)
+
 from baseline.utils.config import Config
 from baseline.engine.runner import Runner
-import torch.backends.cudnn as cudnn
 
 def main():
     # path_config = './configs/rocky_model.py'
@@ -28,7 +36,7 @@ def main():
     
     if os.path.exists(ckpt_path):
         print(f"Resuming from checkpoint: {ckpt_path}")
-        runner.resume(ckpt_path)
+        runner.load_ckpt(ckpt_path)
     else:
         print(f"Checkpoint not found at {ckpt_path}. Exiting.")
         return

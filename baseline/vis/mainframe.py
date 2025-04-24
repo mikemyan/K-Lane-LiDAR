@@ -13,7 +13,7 @@ from numpy.lib.function_base import insert
 import configs.config_vis as cnf
 
 import torch
-import open3d as o3d
+#import open3d as o3d
 import sys
 import os
 import numpy as np
