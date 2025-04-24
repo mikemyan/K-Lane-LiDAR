@@ -27,13 +27,13 @@ class PerformerAttention(nn.Module):
         # Only create new projection if dimensions change
         if self.nb_features != nb_features or self.proj is None:
             self.nb_features = nb_features
-            matrix = torch.randn(self.dim_head, nb_features, device=self.to_qkv.weight.device)
+            matrix = torch.randn(nb_features, self.dim_head, device=self.to_qkv.weight.device)
             q, _ = torch.qr(matrix)  # orthogonal matrix
             self.proj = nn.Parameter(q, requires_grad=False)
 
     def kernel_fn(self, x, proj):
         # x shape: [batch_size, num_heads, seq_len, dim_head]
-        # proj shape: [dim_head, nb_features]
+        # proj shape: [nb_features, dim_head]
         
         if self.proj is None:
             raise ValueError("Projection matrix not initialized. Call create_projection_matrix first.")
@@ -42,14 +42,9 @@ class PerformerAttention(nn.Module):
         if proj.device != x.device:
             proj = proj.to(x.device)
         
-        # Debug prints
-        # print(f"x shape: {x.shape}")
-        # print(f"proj shape: {proj.shape}")
-        
         # More explicit computation without einsum
-        x_reshaped = x.permute(0, 1, 3, 2)  # [b, h, d, n]
-        x_proj = torch.matmul(x_reshaped, proj)  # [b, h, d, f]
-        x_proj = x_proj.permute(0, 1, 3, 2)  # [b, h, f, n]
+        # [b, h, n, d] @ [f, d].T -> [b, h, n, f]
+        x_proj = torch.matmul(x, proj.t())  # Direct multiplication, no need for permute
         
         # Numerical stability
         max_val = torch.max(x_proj, dim=-1, keepdim=True)[0]
