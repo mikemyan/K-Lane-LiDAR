@@ -23,8 +23,11 @@ import configs.config_vis as cnf
 
 def main():
     ### Set here ###
-    path_config = './configs/Proj28_GFC-T3_RowRef_82_73.py'
-    path_ckpt = './configs/ml_curr_best.pth'
+    path_config = './configs/Proj28_GFC-T3_RowRef_82_73.py' # ml_proj config
+    path_ckpt = './configs/ml_curr_best.pth' # ml_proj checkpoint
+
+    # path_config = './configs/baseline_config.py' # baseline config
+    # path_ckpt = './configs/ml_curr_best_proj28.pth' # baseline checkpoint
     ### Set here ###
 
     ### Settings ###

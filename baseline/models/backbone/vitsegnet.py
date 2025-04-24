@@ -11,7 +11,6 @@ from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 
 from baseline.models.registry import BACKBONE
-# from .new_performer_transformer import NewPerformerTransformer
 from .ml_transformer import FeedForward
 from .ml_transformer import PerformerAttention
 

@@ -19,9 +19,8 @@ from baseline.engine.runner import Runner
 
 def main():
     torch.cuda.empty_cache()
-
-    # path_config = './configs/rocky_model.py'
-    path_config = './configs/Proj28_GFC-T3_RowRef_82_73.py'
+    path_config = './configs/Proj28_GFC-T3_RowRef_82_73.py' # ml_proj config
+    # path_config = './configs/baseline_config.py' # baseline config
     path_split = path_config.split('/')
     cfg = Config.fromfile(path_config)
     cfg.log_dir = cfg.log_dir + '/' + time_log

@@ -15,7 +15,8 @@ from baseline.engine.runner import Runner
 
 def main():
     # path_config = './configs/rocky_model.py'
-    path_config = './configs/Proj28_GFC-T3_RowRef_82_73.py'
+    path_config = './configs/Proj28_GFC-T3_RowRef_82_73.py' # ml_proj config
+    # path_config = './configs/baseline_config.py' # baseline config    
     path_split = path_config.split('/')
     time_now = time.localtime()
     time_log = '%04d-%02d-%02d-%02d-%02d-%02d' % (time_now.tm_year, time_now.tm_mon, time_now.tm_mday, time_now.tm_hour, time_now.tm_min, time_now.tm_sec)
@@ -32,7 +33,8 @@ def main():
 
     runner = Runner(cfg)
 
-    ckpt_path = './configs/ml_curr_best.pth'
+    ckpt_path = './configs/ml_curr_best.pth' # ml_proj checkpoint
+    # ckpt_path = './configs/ml_base.pth' # baseline checkpoint
     
     if os.path.exists(ckpt_path):
         print(f"Resuming from checkpoint: {ckpt_path}")

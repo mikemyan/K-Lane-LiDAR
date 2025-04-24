@@ -90,10 +90,10 @@ cls_lane_color = [
 
 optimizer = dict(
   type = 'Adam', #'AdamW',
-  lr = 0.0001,
+  lr = 0.0002,
 )
 
-epochs = 20
+epochs = 100
 batch_size = 4
 total_iter = (2904 // batch_size) * epochs
 scheduler = dict(
@@ -102,7 +102,7 @@ scheduler = dict(
 )
 
 eval_ep = 5
-save_ep = 1
+save_ep = 5
 
 ### Setting Here ###
 dataset_path = './data/KLane' # '/media/donghee/HDD_0/KLane'

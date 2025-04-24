@@ -15,24 +15,14 @@ net = dict(
     loss_type='row_ce'
 )
 
-# pcencoder = dict(
-#     type='Projector',
-#     resnet='resnet34',
-#     pretrained=False,
-#     replace_stride_with_dilation=[False, True, False],
-#     out_conv=True,
-#     in_channels=[64, 128, 256, -1]
-# )
-
 pcencoder = dict(
-    type='DenseProjector',
-    densenet='densenet121',
-    pretrained=True, # prev False
-    replace_stride_with_dilation=[False, True, True],
+    type='Projector',
+    resnet='resnet34',
+    pretrained=False,
+    replace_stride_with_dilation=[False, True, False],
     out_conv=True,
-    in_channels=[64, 128, 256, 1024]
+    in_channels=[64, 128, 256, -1]
 )
-
 featuremap_out_channel = 64
 
 filter_mode = 'xyz'
@@ -44,7 +34,6 @@ list_img_size_xy = [1152, 1152]
 backbone = dict(
     type='VitSegNet', # GFC-T
     image_size=144,
-    #patch_size=8,
     patch_size=4,
     channels=64,
     dim=512,
@@ -60,8 +49,7 @@ backbone = dict(
 
 heads = dict(
     type='RowSharNotReducRef',
-    # dim_feat=8, # input feat channels
-    dim_feat=32,
+    dim_feat=32, # input feat channels
     row_size=144,
     dim_shared=512,
     lambda_cls=1.,
@@ -76,12 +64,6 @@ heads = dict(
     tr_emb_dropout = 0.,
     is_reuse_same_network = False,
 )
-
-# heads = dict(
-#     type='LightweightConv2dHead',
-#     in_channels=32,
-#     num_cls=6
-# )
 
 conf_thr = 0.5
 view = True
@@ -98,13 +80,10 @@ cls_lane_color = [
 
 optimizer = dict(
   type = 'Adam', #'AdamW',
-  lr = 0.0001, # for train
-#   lr = 0.0003, # for train_smal
+  lr = 0.0001,
 )
 
-# epochs = 20  # for train_smal
-epochs = 1 # for train or test
-# batch_size = 4
+epochs = 1
 batch_size = 4
 total_iter = (2904 // batch_size) * epochs
 scheduler = dict(
@@ -112,7 +91,6 @@ scheduler = dict(
     T_max = total_iter
 )
 
-# eval_ep = 1
 eval_ep = 1
 save_ep = 1
 
@@ -134,5 +112,5 @@ dataset = dict(
         mode_item='pc',
     )
 )
-# workers=12
+
 workers=24
