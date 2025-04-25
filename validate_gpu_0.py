@@ -27,7 +27,7 @@ def main():
     path_ckpt = './configs/ml_curr_best.pth' # ml_proj checkpoint
 
     # path_config = './configs/baseline_config.py' # baseline config
-    # path_ckpt = './configs/ml_curr_best_proj28.pth' # baseline checkpoint
+    # path_ckpt = './configs/ml_base.pth' # baseline checkpoint
     ### Set here ###
 
     ### Settings ###
