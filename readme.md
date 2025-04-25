@@ -38,11 +38,11 @@ git clone ...
 ```
 
 2. Install the dependencies using requirements.txt
-   1. Install the commented-out packages manually
+   * Install the commented-out packages manually
 ```
 pip3 install torch==1.7.1+cu110 -f https://download.pytorch.org/whl/torch_stable.html
 ```
-   2. Install the rest of the package in batch
+   * Install the rest of the package in batch
 ```
 pip3 install -r requirements.txt
 ```
@@ -85,16 +85,17 @@ KLaneFrameworks
    * You can download these pretrained models from our Google Drive [Google Drive link](https://drive.google.com/drive/u/0/folders/1N3_2hsOI_295krR_cEMITu_RAbtyVbCJ). Then put them in /configs folder.
 
 ### Training & Testing
+* Configure the config files in `\configs` folder. In Proj28_GFC-T3_RowRef_82_73.py, make sure `epochs = 20` and `lr = 0.0001` before running train_gpu_0.py, OR `epochs = 1` and `lr = 0.0003` before running train_gpu_full and validate_gpu_0.py
 
-* To train the model, prepare the total dataset, and in train_gpu_0.py, make sure `path_config = './configs/Proj28_GFC-T3_RowRef_82_73.py'` is uncommented for our model, or make sure `path_config = './configs/baseline_config.py'` is uncommented for base model, and run
+* To train the model, prepare the total dataset, and in train_gpu_0.py, make sure `path_config = './configs/Proj28_GFC-T3_RowRef_82_73.py'` is uncommented for our model, OR make sure `path_config = './configs/baseline_config.py'` is uncommented for base model, and run
 ```
 python3 train_gpu_0.py ...
 ```
-Then, in train_gpu_full.py, make sure `path_config = './configs/Proj28_GFC-T3_RowRef_82_73.py'` and `ckpt_path = './configs/ml_curr_best.pth'` is uncommented for our model, or make sure `ckpt_path = './configs/ml_base.pth'` and `path_config = './configs/baseline_config.py'` is uncommented for base model, and run
+Then, in train_gpu_full.py, make sure `path_config = './configs/Proj28_GFC-T3_RowRef_82_73.py'` and `ckpt_path = './configs/ml_curr_best.pth'` is uncommented for our model, OR make sure `ckpt_path = './configs/ml_base.pth'` and `path_config = './configs/baseline_config.py'` is uncommented for base model, and run
 ```
 python3 train_gpu_full ...
 ```
-* To test from a pretrained model, and in validate_gpu_0.py, make sure `path_config = './configs/Proj28_GFC-T3_RowRef_82_73.py'` and `path_ckpt = './configs/ml_curr_best.pth'` is uncommented for our model, or make sure `path_config = './configs/baseline_config.py'` and `path_ckpt = './configs/ml_curr_best_proj28.pth'` is uncommented for base model, and run
+* To test from a pretrained model, and in validate_gpu_0.py, make sure `path_config = './configs/Proj28_GFC-T3_RowRef_82_73.py'` and `path_ckpt = './configs/ml_curr_best.pth'` is uncommented for our model, OR make sure `path_config = './configs/baseline_config.py'` and `path_ckpt = './configs/ml_curr_best_proj28.pth'` is uncommented for base model, and run
 ```
 python3 validate_gpu_0.py ...
 ```
