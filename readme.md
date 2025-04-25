@@ -7,12 +7,12 @@ This project involves lane detection using the KAIST-LANE (K-Lane) dataset and b
 We made the following modifications to the original **LLDN-GFC** architecture:
 
 1. **Transformer Replacement**:
-   - Replaced the transformer used for the **BEV encoder** with a new version from `net/pcencoder/projector_dense.py`.
+   - Replaced the ResNet34 encoder used for the **BEV encoder** with a new version in `net/pcencoder/projector_dense.py` based on DenseNet121.
    
 2. **Backbone Replacement**:
    - Replaced the **Attention** and **FeedForward** modules of the transformer with our **Global Feature Correlator** backbone located in `baseline/models/backbone/ml_transformer.py`.
 
-These changes were designed to enhance the model's lane detection capabilities and improve overall performance.
+These changes were designed to enhance the model's lane detection capabilities while reducing overall parameter count and model complexity.
 
 
 ## Dataset
@@ -56,7 +56,7 @@ pip3 install -r requirements.txt
 3. <a href="https://drive.google.com/drive/folders/1dUIYuOhnKwM1Uf5Q-nC0X0piCZFL8zCQ?usp=sharing" title="K-Lane Dataset">link for download seq_13 to 14</a>
 4. <a href="https://drive.google.com/drive/folders/12aLITzR_tE8eVi-Q4OWoomX9VR3Olea7?usp=sharing" title="K-Lane Dataset">link for download seq_15, test, and     description</a>
 
-* After all files are downloaded, please arrange the workspace directory with the following structure:
+* After all files are downloaded, please arrange the workspace directory with the following structure (datasets must be unzipped):
 ```
 KLaneFrameworks
 ├── annot_tool
@@ -82,7 +82,7 @@ KLaneFrameworks
    - `ml_base.pth`: The training result of the baseline model (without our modifications).
    - `ml_curr_best.pth`: The training result of our model (with the modifications mentioned above).
 
-   * You can download these pretrained models from our Google Drive [Google Drive link](https://drive.google.com/drive/u/0/folders/1N3_2hsOI_295krR_cEMITu_RAbtyVbCJ). Then put them in /configs folder.
+   * You can download these pretrained models from our Google Drive [Google Drive link](https://drive.google.com/drive/u/0/folders/1N3_2hsOI_295krR_cEMITu_RAbtyVbCJ). Then put them in `\configs` folder.
 
 ### Training & Testing
 * Configure the config files in `\configs` folder. In Proj28_GFC-T3_RowRef_82_73.py, make sure `epochs = 20` and `lr = 0.0001` before running train_gpu_0.py, OR `epochs = 1` and `lr = 0.0003` before running train_gpu_full and validate_gpu_0.py
@@ -110,16 +110,3 @@ We thank the maintainers of the following projects that enable us to develop `K-
 [`OpenPCDet`](https://github.com/open-mmlab/OpenPCDet) by MMLAB, [`TuRoad`](https://github.com/Turoad/lanedet) bu TuZheng.
 
 This work was supported by the National Research Foundation of Korea (NRF) grant funded by the Korea government (MSIT) (No. 2021R1A2C3008370).
-
-## Citation
-
-If you find this work is useful for your research, please consider citing:
-```
-@InProceedings{paek2022klane,
-  title     = {K-Lane: Lidar Lane Dataset and Benchmark for Urban Roads and Highways},
-  author    = {Paek, Dong-Hee and Kong, Seung-Hyun and Wijaya, Kevin Tirta},
-  booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Workshop on Autonomous Driving (WAD)},
-  month     = {June},
-  year      = {2022}
-}
-```
