@@ -38,11 +38,11 @@ git clone ...
 ```
 
 2. Install the dependencies using requirements.txt
-   * Install the commented-out packages manually
+* Install the commented-out packages manually
 ```
 pip3 install torch==1.7.1+cu110 -f https://download.pytorch.org/whl/torch_stable.html
 ```
-   * Install the rest of the package in batch
+* Install the rest of the package in batch
 ```
 pip3 install -r requirements.txt
 ```
@@ -91,7 +91,7 @@ KLaneFrameworks
 ```
 python3 train_gpu_0.py ...
 ```
-Then, in train_gpu_full.py, make sure `path_config = './configs/Proj28_GFC-T3_RowRef_82_73.py'` and `ckpt_path = './configs/ml_curr_best.pth'` is uncommented for our model, OR make sure `ckpt_path = './configs/ml_base.pth'` and `path_config = './configs/baseline_config.py'` is uncommented for base model, and run
+   Then, in train_gpu_full.py, make sure `path_config = './configs/Proj28_GFC-T3_RowRef_82_73.py'` and `ckpt_path = './configs/ml_curr_best.pth'` is uncommented for our model, OR make sure `ckpt_path = './configs/ml_base.pth'` and `path_config = './configs/baseline_config.py'` is uncommented for base model, and run
 ```
 python3 train_gpu_full ...
 ```
