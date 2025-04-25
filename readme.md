@@ -91,11 +91,11 @@ KLaneFrameworks
 ```
 python3 train_gpu_0.py ...
 ```
-   Then, in train_gpu_full.py, make sure `path_config = './configs/Proj28_GFC-T3_RowRef_82_73.py'` and `ckpt_path = './configs/ml_curr_best.pth'` is uncommented for our model, OR make sure `ckpt_path = './configs/ml_base.pth'` and `path_config = './configs/baseline_config.py'` is uncommented for base model, and run
+   Then, in train_gpu_full.py, make sure `path_config = './configs/Proj28_GFC-T3_RowRef_82_73.py'` and `ckpt_path = './configs/ml_curr_best.pth'` are uncommented for our model, OR make sure `ckpt_path = './configs/ml_base.pth'` and `path_config = './configs/baseline_config.py'` are uncommented for base model, and run
 ```
 python3 train_gpu_full ...
 ```
-* To test from a pretrained model, and in validate_gpu_0.py, make sure `path_config = './configs/Proj28_GFC-T3_RowRef_82_73.py'` and `path_ckpt = './configs/ml_curr_best.pth'` is uncommented for our model, OR make sure `path_config = './configs/baseline_config.py'` and `path_ckpt = './configs/ml_curr_best_proj28.pth'` is uncommented for base model, and run
+* To test from a pretrained model, and in validate_gpu_0.py, make sure `path_config = './configs/Proj28_GFC-T3_RowRef_82_73.py'` and `path_ckpt = './configs/ml_curr_best.pth'` are uncommented for our model, OR make sure `path_config = './configs/baseline_config.py'` and `path_ckpt = './configs/ml_curr_best_proj28.pth'` are uncommented for base model, and run
 ```
 python3 validate_gpu_0.py ...
 ```
